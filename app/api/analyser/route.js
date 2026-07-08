@@ -222,8 +222,13 @@ export async function POST(request) {
             }, { status: result.status });
         }
         const data = result.data;
-        const parsed = parseJson(data?.choices?.[0]?.message?.content || "");
-        const analysis = normalizeAnalysis(parsed || {}, {
+        const content = data?.choices?.[0]?.message?.content || "";
+        const parsed = parseJson(content);
+        const analysis = normalizeAnalysis(parsed || {
+            summary: content,
+            answer: content,
+            limitations: ["The model returned an unstructured response, so KAMAL preserved it as a patient-facing summary."]
+        }, {
             file: fileContext
         });
         return NextResponse.json({
