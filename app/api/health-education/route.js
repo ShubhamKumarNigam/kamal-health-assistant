@@ -15,23 +15,63 @@ function stripJsonFence(content) {
 }
 
 function parseJson(content) {
+    const stripped = stripJsonFence(content);
     try {
-        return JSON.parse(stripJsonFence(content));
+        return JSON.parse(stripped);
     }
     catch {
-        const text = String(content || "");
-        const start = text.indexOf("{");
-        const end = text.lastIndexOf("}");
+        const start = stripped.indexOf("{");
+        const end = stripped.lastIndexOf("}");
         if (start >= 0 && end > start) {
             try {
-                return JSON.parse(text.slice(start, end + 1));
+                return JSON.parse(stripped.slice(start, end + 1));
             }
             catch {
-                return null;
+                return parsePartialJson(stripped);
             }
         }
     }
-    return null;
+    return parsePartialJson(stripped);
+}
+
+function decodeJsonString(value) {
+    try {
+        return JSON.parse(`"${value}"`);
+    }
+    catch {
+        return String(value || "").replace(/\\"/g, "\"").replace(/\\n/g, " ").trim();
+    }
+}
+
+function partialStringField(content, field) {
+    const match = String(content || "").match(new RegExp(`"${field}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"`));
+    return match ? decodeJsonString(match[1]) : "";
+}
+
+function partialArrayField(content, field) {
+    const match = String(content || "").match(new RegExp(`"${field}"\\s*:\\s*\\[([\\s\\S]*?)(?:\\]|$)`));
+    if (!match) {
+        return [];
+    }
+    return [...match[1].matchAll(/"((?:\\.|[^"\\])*)"/g)].map((entry) => decodeJsonString(entry[1]));
+}
+
+function parsePartialJson(content) {
+    const fallback = {
+        summary: partialStringField(content, "summary"),
+        keyPoints: partialArrayField(content, "keyPoints"),
+        selfCare: partialArrayField(content, "selfCare"),
+        askDoctor: partialArrayField(content, "askDoctor"),
+        redFlags: partialArrayField(content, "redFlags"),
+        disclaimer: partialStringField(content, "disclaimer")
+    };
+    const hasContent = fallback.summary ||
+        fallback.keyPoints.length ||
+        fallback.selfCare.length ||
+        fallback.askDoctor.length ||
+        fallback.redFlags.length ||
+        fallback.disclaimer;
+    return hasContent ? fallback : null;
 }
 
 function toList(value) {
@@ -76,10 +116,10 @@ Safety:
 
 Return JSON only:
 {
-  "summary": "short direct answer in patient-friendly language",
-  "keyPoints": ["important point 1", "important point 2"],
-  "selfCare": ["safe general supportive care item"],
-  "askDoctor": ["what to ask a clinician or when to book a visit"],
+  "summary": "direct answer in 35 words or fewer",
+  "keyPoints": ["point 1", "point 2"],
+  "selfCare": ["safe care item 1", "safe care item 2"],
+  "askDoctor": ["when to call a clinician"],
   "redFlags": ["urgent warning sign"],
   "disclaimer": "general medical education disclaimer"
 }`;
