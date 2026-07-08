@@ -11,7 +11,7 @@ export async function POST(request) {
     if (!user) {
         return NextResponse.json({ ok: false, message: "Please sign in before starting diagnosis." }, { status: 401 });
     }
-    const intake = getLatestPatientIntake(user.id);
+    const intake = await getLatestPatientIntake(user.id);
     if (!intake?.mainConcern) {
         return NextResponse.json({ ok: false, message: "Save your concern before starting diagnosis." }, { status: 400 });
     }

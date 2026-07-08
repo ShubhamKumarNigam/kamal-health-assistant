@@ -14,8 +14,8 @@ The frontend and APIs are in a single Next.js app directory with API routes impl
 ## Technology Stack
 - Framework: Next.js 15.1, React 19
 - Styling: Tailwind CSS 3.4
-- DB: `node:sqlite` via `DatabaseSync` (SQLite file `kamal.db` by default)
-- Auth/session: cookie-based, custom SQLite sessions
+- DB: Neon Postgres via `@neondatabase/serverless`
+- Auth/session: cookie-based, custom Postgres-backed sessions
 - AI services: Groq API (chat, transcription, image-aware prompts)
 - Email: Resend
 - Language: custom multilingual UI layer (`en`, `hi`, `bn`, `ar`) with backend text translation route
@@ -26,9 +26,9 @@ The frontend and APIs are in a single Next.js app directory with API routes impl
 - Session cookies:
   - `kamal_session` for authentication
   - `kamal_diagnosis_session` for active diagnosis flow
-- DB path: `process.env.KAMAL_DB_PATH || "./kamal.db"`
+- DB connection: `process.env.DATABASE_URL || process.env.POSTGRES_URL`
 - Optional/required runtime env in `.env.example`:
-  - `KAMAL_DB_PATH`
+  - `DATABASE_URL`
   - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
   - `GROQ_API_KEY`
@@ -153,9 +153,9 @@ Tables created/ensured at runtime:
 - `patient_intakes` with vital user context and concern
 - `medication_reminders` with status/channel/repeat rule/details
 - `diagnosis_sessions` with transcript and diagnosis snapshots
-- `login_info` SQLite view is created from user columns for read convenience
+- `login_info` Postgres view is created from user columns for read convenience
 
-Migration strategy is additive and schema-friendly (runtime column creation helpers).
+Migration strategy is schema-friendly: tables and indexes are created lazily on first database access.
 
 ## Behavior Characteristics / Important Notes
 - Frontend pages and API contracts are tightly coupled by shared helpers; API returns `{ ok: false, message: ... }` and status codes in failures.
@@ -167,6 +167,6 @@ Migration strategy is additive and schema-friendly (runtime column creation help
 - Google login path supports account linking and creates users with verified status when available.
 
 ## Current State Snapshot
-- The repo includes generated runtime artifacts (`.next`) and a local `kamal.db` file.
-- This suggests a local dev/staging run may have already executed schema migrations.
+- The hosted demo uses Vercel plus Neon Postgres; local `kamal.db` files are ignored and should not be committed.
+- Production database schema is created lazily when an authenticated flow first touches the store.
 - `summary.md` can be kept as technical orientation for future hardening and test coverage.

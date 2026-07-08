@@ -16,8 +16,8 @@ export async function GET() {
         return NextResponse.json({ ok: false, message: "Please sign in first." }, { status: 401 });
     }
     await processDueMedicationReminders();
-    refreshMedicationReminderSchedules();
-    return NextResponse.json({ ok: true, reminders: listActiveMedicationReminders(user.id) });
+    await refreshMedicationReminderSchedules();
+    return NextResponse.json({ ok: true, reminders: await listActiveMedicationReminders(user.id) });
 }
 
 export async function POST(request) {
@@ -26,7 +26,7 @@ export async function POST(request) {
         return NextResponse.json({ ok: false, message: "Please sign in first." }, { status: 401 });
     }
     await processDueMedicationReminders();
-    const result = createMedicationReminder(user.id, await request.json());
+    const result = await createMedicationReminder(user.id, await request.json());
     if (result.ok) {
         const scheduled = {
             id: result.reminder.id,

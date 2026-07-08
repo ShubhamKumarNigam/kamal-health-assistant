@@ -1,18 +1,16 @@
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE IF NOT EXISTS users (
   id text PRIMARY KEY,
   name text NOT NULL,
   email text UNIQUE NOT NULL,
   password_hash text NOT NULL,
-  email_verified integer NOT NULL DEFAULT 0,
+  email_verified boolean NOT NULL DEFAULT false,
   phone text,
-  phone_verified integer NOT NULL DEFAULT 0,
+  phone_verified boolean NOT NULL DEFAULT false,
   google_sub text,
   auth_provider text NOT NULL DEFAULT 'email',
   avatar_url text,
-  created_at text NOT NULL DEFAULT (datetime('now')),
-  updated_at text NOT NULL DEFAULT (datetime('now'))
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_idx
@@ -25,11 +23,11 @@ CREATE TABLE IF NOT EXISTS otp_codes (
   email text NOT NULL,
   code_hash text NOT NULL,
   purpose text NOT NULL CHECK (purpose IN ('signup_verification', 'password_reset')),
-  expires_at text NOT NULL,
+  expires_at timestamptz NOT NULL,
   attempts integer NOT NULL DEFAULT 0,
-  consumed integer NOT NULL DEFAULT 0,
-  created_at text NOT NULL DEFAULT (datetime('now')),
-  last_sent_at text NOT NULL DEFAULT (datetime('now'))
+  consumed boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  last_sent_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS otp_codes_email_purpose_idx
@@ -39,9 +37,9 @@ CREATE TABLE IF NOT EXISTS sessions (
   id text PRIMARY KEY,
   user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token_hash text NOT NULL,
-  created_at text NOT NULL DEFAULT (datetime('now')),
-  expires_at text NOT NULL,
-  revoked integer NOT NULL DEFAULT 0
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  revoked boolean NOT NULL DEFAULT false
 );
 
 CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id);
@@ -55,8 +53,8 @@ CREATE TABLE IF NOT EXISTS patient_intakes (
   weight_kg integer NOT NULL,
   allergies text,
   main_concern text NOT NULL DEFAULT '',
-  created_at text NOT NULL DEFAULT (datetime('now')),
-  updated_at text NOT NULL DEFAULT (datetime('now'))
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS patient_intakes_user_id_created_at_idx
@@ -66,7 +64,7 @@ CREATE TABLE IF NOT EXISTS medication_reminders (
   id text PRIMARY KEY,
   user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   medicine_name text NOT NULL,
-  scheduled_at text NOT NULL,
+  scheduled_at timestamptz NOT NULL,
   channel text NOT NULL CHECK (channel IN ('WhatsApp', 'Email')),
   status text NOT NULL CHECK (status IN ('scheduled', 'sent', 'taken', 'failed')) DEFAULT 'scheduled',
   repeat_rule text NOT NULL DEFAULT 'none',
@@ -75,18 +73,32 @@ CREATE TABLE IF NOT EXISTS medication_reminders (
   custom_interval integer,
   custom_unit text,
   custom_weekdays_json text,
-  email_sent_at text,
+  details text,
+  email_sent_at timestamptz,
   email_error text,
-  created_at text NOT NULL DEFAULT (datetime('now')),
-  updated_at text NOT NULL DEFAULT (datetime('now'))
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS medication_reminders_user_scheduled_idx
   ON medication_reminders (user_id, status, scheduled_at);
 
-DROP VIEW IF EXISTS login_info;
+CREATE TABLE IF NOT EXISTS diagnosis_sessions (
+  id text PRIMARY KEY,
+  user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  patient_name text NOT NULL,
+  patient_email text NOT NULL,
+  pre_consultation_text text NOT NULL,
+  transcript_json text NOT NULL,
+  diagnosis_json text NOT NULL,
+  formatted_summary text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-CREATE VIEW login_info AS
+CREATE INDEX IF NOT EXISTS diagnosis_sessions_user_created_idx
+  ON diagnosis_sessions (user_id, created_at DESC);
+
+CREATE OR REPLACE VIEW login_info AS
   SELECT
     id,
     name,

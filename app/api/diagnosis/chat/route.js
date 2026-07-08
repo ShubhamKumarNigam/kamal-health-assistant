@@ -382,7 +382,7 @@ export async function POST(request) {
     if (!user) {
         return NextResponse.json({ ok: false, message: "Please sign in before starting diagnosis." }, { status: 401 });
     }
-    const intake = getLatestPatientIntake(user.id);
+    const intake = await getLatestPatientIntake(user.id);
     if (!intake?.mainConcern) {
         return NextResponse.json({ ok: false, message: "Save your concern before the diagnosis session can continue." }, { status: 400 });
     }
@@ -398,7 +398,7 @@ export async function POST(request) {
     if (!messages.length || messages[messages.length - 1].role !== "user") {
         return NextResponse.json({ ok: false, message: "Send a patient message to continue diagnosis." }, { status: 400 });
     }
-    const diagnosisSessions = listDiagnosisSessions(user.id);
+    const diagnosisSessions = await listDiagnosisSessions(user.id);
     try {
         const result = await callGroq({ user, intake, diagnosisSessions, messages });
         if (!result.ok) {
@@ -417,7 +417,7 @@ export async function POST(request) {
                 ...output.diagnosis,
                 caution: assistantMessage.caution
             });
-            const saveResult = saveDiagnosisSession(user, intake, [...messages, assistantMessage], diagnosis);
+            const saveResult = await saveDiagnosisSession(user, intake, [...messages, assistantMessage], diagnosis);
             if (!saveResult.ok) {
                 return NextResponse.json({ ok: false, message: saveResult.message }, { status: saveResult.status });
             }

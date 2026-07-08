@@ -46,8 +46,8 @@ export default async function ReportPage() {
         redirect("/login?next=/reports/demo");
     }
 
-    const intake = getLatestPatientIntake(user.id);
-    const diagnosisSessions = listDiagnosisSessions(user.id);
+    const intake = await getLatestPatientIntake(user.id);
+    const diagnosisSessions = await listDiagnosisSessions(user.id);
     const latestSession = diagnosisSessions[0] || null;
     const hasReportSource = diagnosisSessions.length > 0;
     const reportResult = hasReportSource

@@ -9,7 +9,7 @@ export default async function SessionPage() {
     if (!user) {
         redirect("/login?next=/session");
     }
-    const intake = getLatestPatientIntake(user.id);
+    const intake = await getLatestPatientIntake(user.id);
     return (<AppShell description="Review the saved patient context before starting the doctor-style diagnosis flow." eyebrow="Diagnosis session" title="Start with your concern" variant="dark">
       <div className="grid gap-6">
         <PatientIntakeForm existingIntake={intake} startBlank startDiagnosisOnSubmit submitLabel="Start diagnosis" successMessage="Concern saved. You can start diagnosis now." />

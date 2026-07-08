@@ -11,7 +11,7 @@ export default async function DiagnosisPage() {
     if (!user) {
         redirect("/login?next=/session");
     }
-    const intake = getLatestPatientIntake(user.id);
+    const intake = await getLatestPatientIntake(user.id);
     if (!intake?.mainConcern) {
         redirect("/session");
     }

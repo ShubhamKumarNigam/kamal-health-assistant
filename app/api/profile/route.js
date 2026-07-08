@@ -10,6 +10,6 @@ export async function PUT(request) {
     if (!user) {
         return NextResponse.json({ ok: false, message: "Please sign in first." }, { status: 401 });
     }
-    const result = updateUserProfile(user.id, await request.json().catch(() => ({})));
+    const result = await updateUserProfile(user.id, await request.json().catch(() => ({})));
     return NextResponse.json(result, { status: result.ok ? 200 : result.status });
 }

@@ -7,7 +7,7 @@ import {
 } from "@/lib/auth/sqliteStore";
 
 export async function POST(request) {
-    const demoResult = ensureConfiguredDemoUser();
+    const demoResult = await ensureConfiguredDemoUser();
     if (!demoResult.ok) {
         return NextResponse.json(demoResult, { status: demoResult.status });
     }

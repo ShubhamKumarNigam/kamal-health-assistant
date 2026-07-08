@@ -22,8 +22,8 @@ export default async function HistoryPage() {
     }
     const patientName = user.name || "Patient";
     const patientEmail = user.email || "";
-    const intake = getLatestPatientIntake(user.id);
-    const diagnosisSessions = listDiagnosisSessions(user.id);
+    const intake = await getLatestPatientIntake(user.id);
+    const diagnosisSessions = await listDiagnosisSessions(user.id);
     const summary = buildHistorySummary({ patientName, patientEmail, intake, diagnosisSessions });
 
     return (<AppShell description="A concise patient history template with patient details and diagnosis context." eyebrow="History" title="Patient history summary">

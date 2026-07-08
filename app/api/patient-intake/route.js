@@ -10,7 +10,7 @@ export async function GET() {
     if (!user) {
         return NextResponse.json({ ok: false, message: "Please sign in first." }, { status: 401 });
     }
-    return NextResponse.json({ ok: true, intake: getLatestPatientIntake(user.id) });
+    return NextResponse.json({ ok: true, intake: await getLatestPatientIntake(user.id) });
 }
 
 export async function POST(request) {
@@ -19,6 +19,6 @@ export async function POST(request) {
     if (!user) {
         return NextResponse.json({ ok: false, message: "Please sign in first." }, { status: 401 });
     }
-    const result = savePatientIntake(user.id, await request.json());
+    const result = await savePatientIntake(user.id, await request.json());
     return NextResponse.json(result, { status: result.ok ? 200 : result.status });
 }

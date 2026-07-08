@@ -7,7 +7,7 @@ function isSafeNextPath(path) {
 }
 export default async function LoginPage({ searchParams }) {
     const { authError, next, signedOut } = await searchParams;
-    initializeAuthDatabase();
+    await initializeAuthDatabase();
     const safeNextPath = isSafeNextPath(next) ? next : "/session";
     const cookieStore = await cookies();
     const user = await getUserBySessionToken(cookieStore.get(SESSION_COOKIE)?.value);

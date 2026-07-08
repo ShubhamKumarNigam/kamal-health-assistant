@@ -20,8 +20,8 @@ export async function POST(request) {
         return NextResponse.json({ ok: false, message: "Enter a valid email address." }, { status: 400 });
     }
 
-    const intake = getLatestPatientIntake(user.id);
-    const diagnosisSessions = listDiagnosisSessions(user.id);
+    const intake = await getLatestPatientIntake(user.id);
+    const diagnosisSessions = await listDiagnosisSessions(user.id);
     if (!diagnosisSessions.length) {
         return NextResponse.json({ ok: false, message: "No completed diagnosis history is available for this report." }, { status: 400 });
     }

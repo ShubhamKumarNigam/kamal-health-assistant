@@ -25,8 +25,8 @@ export default async function DietPage() {
         redirect("/login?next=/diet");
     }
 
-    const intake = getLatestPatientIntake(user.id);
-    const diagnosisSessions = listDiagnosisSessions(user.id);
+    const intake = await getLatestPatientIntake(user.id);
+    const diagnosisSessions = await listDiagnosisSessions(user.id);
     const latestSession = diagnosisSessions[0] || null;
     const reportResult = latestSession
         ? await buildPatientReport({ user, intake, latestSession, diagnosisSessions })

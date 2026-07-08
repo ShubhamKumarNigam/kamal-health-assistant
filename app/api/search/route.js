@@ -49,7 +49,7 @@ function matchesQuery(item, query) {
 export async function GET(request) {
     const query = String(request.nextUrl.searchParams.get("q") || "").trim();
     const appResults = query ? appSearchItems.filter((item) => matchesQuery(item, query)) : [];
-    const patientResults = searchUserNames(query).map((user) => ({
+    const patientResults = (await searchUserNames(query)).map((user) => ({
         ...user,
         type: "Patient"
     }));

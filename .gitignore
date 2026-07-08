@@ -18,3 +18,4 @@ kamal.db-*
 kamal.db.*
 *.sqlite
 *.sqlite3
+.vercel

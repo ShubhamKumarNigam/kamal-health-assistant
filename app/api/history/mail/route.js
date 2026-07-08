@@ -12,8 +12,8 @@ export async function POST() {
     if (!user) {
         return NextResponse.json({ ok: false, message: "Please sign in before emailing history." }, { status: 401 });
     }
-    const intake = getLatestPatientIntake(user.id);
-    const diagnosisSessions = listDiagnosisSessions(user.id);
+    const intake = await getLatestPatientIntake(user.id);
+    const diagnosisSessions = await listDiagnosisSessions(user.id);
     const latestDiagnosisSessions = diagnosisSessions.slice(0, 1);
     const summary = buildHistorySummary({
         patientName: user.name,

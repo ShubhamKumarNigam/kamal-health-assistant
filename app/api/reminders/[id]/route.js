@@ -13,7 +13,7 @@ export async function PATCH(_request, { params }) {
     }
     await processDueMedicationReminders();
     const { id } = await params;
-    const result = markMedicationReminderTaken(user.id, id);
+    const result = await markMedicationReminderTaken(user.id, id);
     if (result.ok) {
         cancelMedicationReminderSchedule(id);
     }
