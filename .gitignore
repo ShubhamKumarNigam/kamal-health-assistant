@@ -19,3 +19,4 @@ kamal.db.*
 *.sqlite
 *.sqlite3
 .vercel
+.env*
