@@ -1,43 +1,12 @@
-import fs from "fs";
-import path from "path";
 import { NextResponse } from "next/server";
+import { chatProviderConfig, fetchChatCompletion } from "@/lib/aiProviderClient";
 import { languages } from "@/lib/languages";
 
 export const runtime = "nodejs";
 
-const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "llama-3.3-70b-versatile";
-const MAX_TEXTS = 120;
-const MAX_TEXT_LENGTH = 400;
-
-function sanitizeApiKey(value) {
-    return String(value || "")
-        .trim()
-        .replace(/^["']|["']$/g, "")
-        .replace(/[\u200B-\u200D\uFEFF\r\n\t ]/g, "")
-        .trim();
-}
-
-function localEnvGroqKey() {
-    try {
-        const envPath = path.join(process.cwd(), ".env.local");
-        const envText = fs.readFileSync(envPath, "utf8");
-        const line = envText
-            .split("\n")
-            .find((entry) => entry.trim().startsWith("GROQ_API_KEY="));
-        if (!line) {
-            return "";
-        }
-        return sanitizeApiKey(line.slice(line.indexOf("=") + 1));
-    }
-    catch {
-        return "";
-    }
-}
-
-function groqApiKey() {
-    return localEnvGroqKey() || sanitizeApiKey(process.env.GROQ_API_KEY);
-}
+const GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile";
+const MAX_TEXTS = 45;
+const MAX_TEXT_LENGTH = 240;
 
 function stripJsonFence(content) {
     return String(content || "")
@@ -98,9 +67,9 @@ Schema:
 }
 
 export async function POST(request) {
-    const apiKey = groqApiKey();
-    if (!apiKey) {
-        return NextResponse.json({ ok: false, message: "Groq is not configured. Set GROQ_API_KEY in .env.local." }, { status: 503 });
+    const provider = chatProviderConfig({ fallbackModel: GROQ_FALLBACK_MODEL });
+    if (!provider) {
+        return NextResponse.json({ ok: false, message: "AI provider is not configured. Set OPENCODE_API_KEY or GROQ_API_KEY." }, { status: 503 });
     }
 
     const body = await request.json().catch(() => ({}));
@@ -110,7 +79,7 @@ export async function POST(request) {
     }
 
     if (language.code === "en") {
-        return NextResponse.json({ ok: true, model: MODEL, translations: {} });
+        return NextResponse.json({ ok: true, model: provider.model, provider: provider.name, translations: {} });
     }
 
     const texts = [...new Set(Array.isArray(body.texts) ? body.texts.map(normalizeText).filter(Boolean) : [])]
@@ -118,42 +87,38 @@ export async function POST(request) {
         .slice(0, MAX_TEXTS);
 
     if (!texts.length) {
-        return NextResponse.json({ ok: true, model: MODEL, translations: {} });
+        return NextResponse.json({ ok: true, model: provider.model, provider: provider.name, translations: {} });
     }
 
     const source = Object.fromEntries(texts.map((text) => [text, ""]));
 
     try {
-        const response = await fetch(GROQ_CHAT_URL, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: MODEL,
-                temperature: 0,
-                max_tokens: 2500,
-                messages: [
-                    { role: "system", content: systemPrompt(language) },
-                    {
-                        role: "user",
-                        content: JSON.stringify({
-                            targetLanguage: language.name,
-                            translations: source
-                        })
-                    }
-                ]
-            })
+        const result = await fetchChatCompletion({
+            url: provider.url,
+            apiKey: provider.apiKey,
+            model: provider.model,
+            temperature: 0,
+            maxTokens: 1000,
+            fallbackMessage: "Translation model could not respond.",
+            messages: [
+                { role: "system", content: systemPrompt(language) },
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        targetLanguage: language.name,
+                        translations: source
+                    })
+                }
+            ]
         });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
+        if (!result.ok) {
             return NextResponse.json({
                 ok: false,
-                message: data?.error?.message || "Translation model could not respond."
-            }, { status: response.status });
+                message: result.message
+            }, { status: result.status });
         }
 
+        const data = result.data;
         const parsed = parseJsonObject(data?.choices?.[0]?.message?.content || "");
         const translations = parsed?.translations && typeof parsed.translations === "object" ? parsed.translations : {};
         const normalizedTranslations = {};
@@ -166,7 +131,8 @@ export async function POST(request) {
 
         return NextResponse.json({
             ok: true,
-            model: MODEL,
+            model: provider.model,
+            provider: provider.name,
             translations: normalizedTranslations
         });
     }

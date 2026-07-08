@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { DIAGNOSIS_SESSION_COOKIE, verifyDiagnosisSessionJwt } from "@/lib/auth/diagnosisSessionJwt";
@@ -10,43 +8,14 @@ import {
     listDiagnosisSessions,
     saveDiagnosisSession
 } from "@/lib/auth/sqliteStore";
+import { chatProviderConfig, fetchChatCompletion } from "@/lib/aiProviderClient";
 
 export const runtime = "nodejs";
 
-const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "qwen/qwen3-32b";
+const GROQ_FALLBACK_MODEL = "qwen/qwen3-32b";
 const DEFAULT_CAUTION = "Caution: This is AI-assisted health guidance, not a final medical diagnosis. Seek urgent medical care for severe, sudden, worsening, or emergency symptoms.";
 const MIN_DIAGNOSIS_TURNS = 5;
 const MAX_DIAGNOSIS_TURNS = 16;
-
-function sanitizeApiKey(value) {
-    return String(value || "")
-        .trim()
-        .replace(/^["']|["']$/g, "")
-        .replace(/[\u200B-\u200D\uFEFF\r\n\t ]/g, "")
-        .trim();
-}
-
-function localEnvGroqKey() {
-    try {
-        const envPath = path.join(process.cwd(), ".env.local");
-        const envText = fs.readFileSync(envPath, "utf8");
-        const line = envText
-            .split("\n")
-            .find((entry) => entry.trim().startsWith("GROQ_API_KEY="));
-        if (!line) {
-            return "";
-        }
-        return sanitizeApiKey(line.slice(line.indexOf("=") + 1));
-    }
-    catch {
-        return "";
-    }
-}
-
-function groqApiKey() {
-    return localEnvGroqKey() || sanitizeApiKey(process.env.GROQ_API_KEY);
-}
 
 function normalizeMessages(messages) {
     if (!Array.isArray(messages)) {
@@ -55,7 +24,7 @@ function normalizeMessages(messages) {
     return messages
         .map((message) => ({
             role: message?.role === "assistant" ? "assistant" : "user",
-            content: String(message?.content || "").trim().slice(0, 3000)
+            content: String(message?.content || "").trim().slice(0, 1600)
         }))
         .filter((message) => message.content)
         .slice(-(MAX_DIAGNOSIS_TURNS * 2 + 2));
@@ -210,7 +179,7 @@ function priorReportContext(diagnosisSessions = []) {
     if (!diagnosisSessions.length) {
         return "No previous completed diagnosis report is available.";
     }
-    return diagnosisSessions.slice(0, 6).map((session, index) => {
+    return diagnosisSessions.slice(0, 4).map((session, index) => {
         const diagnosis = session?.diagnosis || {};
         const likelyConditions = diagnosisList(diagnosis.likelyConditions).slice(0, 5);
         const recommendations = uniqueList(
@@ -225,11 +194,11 @@ function priorReportContext(diagnosisSessions = []) {
         return [
             `Previous report ${index + 1}${index === 0 ? " (latest saved)" : ""}`,
             `Saved at: ${session?.createdAt || "Not available"}`,
-            `Pre text: ${compactText(session?.preConsultationText, 450) || "Not available"}`,
+            `Pre text: ${compactText(session?.preConsultationText, 260) || "Not available"}`,
             `Primary condition: ${compactText(diagnosis.primaryDisease || likelyConditions[0] || "Not specified", 180)}`,
             `Likely conditions: ${likelyConditions.length ? likelyConditions.join("; ") : "Not specified"}`,
             `Confidence: ${diagnosis.confidenceLevel || "Not specified"}`,
-            `Reasoning: ${compactText(diagnosis.reasoning || session?.formattedSummary, 520) || "Not available"}`,
+            `Reasoning: ${compactText(diagnosis.reasoning || session?.formattedSummary, 320) || "Not available"}`,
             `Doctor recommendations: ${recommendations.length ? recommendations.join("; ") : "Not specified"}`,
             `Self-care: ${selfCare.length ? selfCare.join("; ") : "Not specified"}`,
             `Red flags: ${redFlags.length ? redFlags.join("; ") : "Not specified"}`
@@ -288,42 +257,38 @@ Schema:
 }`;
 }
 
-async function callGroq({ user, intake, diagnosisSessions, messages }) {
-    const apiKey = groqApiKey();
-    if (!apiKey) {
+async function callDiagnosisModel({ user, intake, diagnosisSessions, messages }) {
+    const provider = chatProviderConfig({ fallbackModel: GROQ_FALLBACK_MODEL });
+    if (!provider) {
         return {
             ok: false,
             status: 503,
-            message: "Groq is not configured. Set GROQ_API_KEY in .env.local."
+            message: "AI provider is not configured. Set OPENCODE_API_KEY or GROQ_API_KEY."
         };
     }
     const turnCount = patientTurnCount(messages);
     const endRequested = wantsToEndSession(latestPatientMessage(messages));
     const forceComplete = endRequested || turnCount >= MAX_DIAGNOSIS_TURNS;
-    const response = await fetch(GROQ_CHAT_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            model: MODEL,
-            temperature: 0.2,
-            max_tokens: 1200,
-            messages: [
-                { role: "system", content: systemPrompt({ user, intake, diagnosisSessions, turnCount, forceComplete, endRequested }) },
-                ...messages
-            ]
-        })
+    const result = await fetchChatCompletion({
+        url: provider.url,
+        apiKey: provider.apiKey,
+        model: provider.model,
+        temperature: 0.2,
+        maxTokens: 850,
+        fallbackMessage: "The diagnosis model could not respond. Please try again.",
+        messages: [
+            { role: "system", content: systemPrompt({ user, intake, diagnosisSessions, turnCount, forceComplete, endRequested }) },
+            ...messages
+        ]
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
+    if (!result.ok) {
         return {
             ok: false,
-            status: response.status,
-            message: data?.error?.message || "The diagnosis model could not respond. Please try again."
+            status: result.status,
+            message: result.message
         };
     }
+    const data = result.data;
     const content = data?.choices?.[0]?.message?.content || "";
     const parsed = parseDoctorJson(content);
     if (!parsed) {
@@ -342,7 +307,8 @@ async function callGroq({ user, intake, diagnosisSessions, messages }) {
                             ? "The patient ended the session before a specific diagnosis could be confirmed from the available details."
                             : "The maximum turn limit was reached before a specific diagnosis could be confirmed from the available details."
                     })
-                }
+                },
+                provider
             };
         }
         return {
@@ -351,7 +317,8 @@ async function callGroq({ user, intake, diagnosisSessions, messages }) {
                 status: "follow_up",
                 reply: fallbackFollowUp(messages),
                 caution: DEFAULT_CAUTION
-            }
+            },
+            provider
         };
     }
     if (forceComplete && parsed.status !== "complete") {
@@ -370,10 +337,11 @@ async function callGroq({ user, intake, diagnosisSessions, messages }) {
                         ? "The patient ended the session before a specific diagnosis could be confirmed from the available details."
                         : "The maximum turn limit was reached before a specific diagnosis could be confirmed from the available details."
                 })
-            }
+            },
+            provider
         };
     }
-    return { ok: true, output: parsed };
+    return { ok: true, output: parsed, provider };
 }
 
 export async function POST(request) {
@@ -400,7 +368,7 @@ export async function POST(request) {
     }
     const diagnosisSessions = await listDiagnosisSessions(user.id);
     try {
-        const result = await callGroq({ user, intake, diagnosisSessions, messages });
+        const result = await callDiagnosisModel({ user, intake, diagnosisSessions, messages });
         if (!result.ok) {
             return NextResponse.json({ ok: false, message: result.message }, { status: result.status });
         }
@@ -425,7 +393,8 @@ export async function POST(request) {
         }
         return NextResponse.json({
             ok: true,
-            model: MODEL,
+            model: result.provider?.model || "fallback",
+            provider: result.provider?.name || "fallback",
             status: isComplete ? "complete" : "follow_up",
             message: assistantMessage,
             diagnosis: isComplete ? savedSession?.diagnosis : null,

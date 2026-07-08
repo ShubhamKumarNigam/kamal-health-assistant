@@ -13,7 +13,7 @@ export default function SearchPage() {
             <div className="flex gap-3">
               <BookOpenCheck aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-primary"/>
               <p className="leading-7">
-                Ask one clear medical education question. KAMAL uses Qwen to explain the topic in simple language with safe next steps.
+                Ask one clear medical education question. KAMAL uses the configured AI provider to explain the topic in simple language with safe next steps.
               </p>
             </div>
           </ClinicalCard>

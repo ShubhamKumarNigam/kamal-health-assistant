@@ -5,12 +5,12 @@ KAMAL is a **Next.js** web application that provides a multilingual AI-powered h
 ## Features
 
 - **Patient Onboarding** — Age, gender, allergies, and health concern collection
-- **AI-Powered Diagnosis Chat** — Guided conversation with Groq AI for symptom assessment
+- **AI-Powered Diagnosis Chat** — Guided conversation with OpenCode Go / MiMo for symptom assessment
 - **Diagnosis History & Reports** — View past sessions and generate detailed reports
 - **Medication Reminders** — Schedule and manage reminders with email notifications
 - **Multilingual Support** — UI and translation in English, Hindi, Bengali, Arabic
 - **Audio Transcription** — Transcribe audio to text using Whisper via Groq
-- **File Analysis** — Upload and analyze medical documents
+- **File Analysis** — Upload and analyze medical documents and images with a multimodal model
 - **Email Reports** — Send diagnosis summaries via Resend
 - **Google OAuth** — Sign in with Google
 
@@ -21,7 +21,7 @@ KAMAL is a **Next.js** web application that provides a multilingual AI-powered h
 | Framework      | Next.js 15.1, React 19              |
 | Styling        | Tailwind CSS 3.4                    |
 | Database       | Neon Postgres via `@neondatabase/serverless` |
-| AI Services    | Groq API (chat, transcription, vision) |
+| AI Services    | OpenCode Go / MiMo for chat and multimodal analysis; Groq Whisper for audio transcription fallback |
 | Email          | Resend                              |
 | Auth           | Cookie-based sessions, Google OAuth |
 | Icons          | Lucide React                        |
@@ -32,7 +32,8 @@ KAMAL is a **Next.js** web application that provides a multilingual AI-powered h
 
 - Node.js 24.x
 - A Neon Postgres database, exposed as `DATABASE_URL`
-- A Groq API key
+- An OpenCode Go API key for chat and multimodal model calls
+- A Groq API key if you want audio transcription via Whisper
 - (Optional) Resend API key for email features
 
 ### Environment Variables
@@ -40,6 +41,9 @@ KAMAL is a **Next.js** web application that provides a multilingual AI-powered h
 Create `.env.local`:
 
 ```env
+OPENCODE_API_KEY=your_opencode_go_api_key
+KAMAL_AI_PROVIDER=opencode
+OPENCODE_MODEL=mimo-v2.5
 GROQ_API_KEY=your_groq_api_key
 RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=noreply@yourdomain.com
@@ -93,7 +97,9 @@ Recommended hosting for the reviewer demo is Vercel plus Neon Postgres.
 Required production environment variables:
 
 - `DATABASE_URL`
-- `GROQ_API_KEY`
+- `OPENCODE_API_KEY`
+- `KAMAL_AI_PROVIDER`
+- `OPENCODE_MODEL`
 - `KAMAL_JWT_SECRET`
 - `KAMAL_DEMO_EMAIL`
 - `KAMAL_DEMO_PASSWORD`
@@ -106,6 +112,7 @@ Optional production environment variables:
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `GOOGLE_REDIRECT_URI`
+- `GROQ_API_KEY` for audio transcription fallback
 
 The app creates its Postgres schema lazily on first database access. The `/database` page shows a masked snapshot for reviewer verification.
 

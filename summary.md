@@ -16,13 +16,13 @@ The frontend and APIs are in a single Next.js app directory with API routes impl
 - Styling: Tailwind CSS 3.4
 - DB: Neon Postgres via `@neondatabase/serverless`
 - Auth/session: cookie-based, custom Postgres-backed sessions
-- AI services: Groq API (chat, transcription, image-aware prompts)
+- AI services: OpenCode Go / MiMo for chat and multimodal analysis, with Groq Whisper used for audio transcription
 - Email: Resend
 - Language: custom multilingual UI layer (`en`, `hi`, `bn`, `ar`) with backend text translation route
 - Diagnostics/security style: explicit server-side validation, schema normalization, and conservative warning text in health responses
 
 ## Environment and Runtime
-- Next runtime for API routes is `nodejs` for Groq/DB/email paths.
+- Next runtime for API routes is `nodejs` for AI provider/DB/email paths.
 - Session cookies:
   - `kamal_session` for authentication
   - `kamal_diagnosis_session` for active diagnosis flow
@@ -31,9 +31,10 @@ The frontend and APIs are in a single Next.js app directory with API routes impl
   - `DATABASE_URL`
   - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
+  - `OPENCODE_API_KEY`, `KAMAL_AI_PROVIDER`, `OPENCODE_MODEL`
   - `GROQ_API_KEY`
   - `KAMAL_JWT_SECRET`
-- Groq key resolution uses `.env.local` first, then process env.
+- AI provider keys are resolved from `.env.local` first, then process env. OpenCode Go is preferred for chat when configured; Groq remains available as fallback and for transcription.
 
 ## Directory and Route Structure
 - `app/` page routes:

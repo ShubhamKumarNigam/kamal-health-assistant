@@ -1,41 +1,11 @@
-import fs from "fs";
-import path from "path";
 import { NextResponse } from "next/server";
+import { fetchGroqJson, groqApiKey } from "@/lib/aiProviderClient";
 
 export const runtime = "nodejs";
 
 const GROQ_TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 const MODEL = "whisper-large-v3";
 const MAX_AUDIO_BYTES = 12 * 1024 * 1024;
-
-function sanitizeApiKey(value) {
-    return String(value || "")
-        .trim()
-        .replace(/^["']|["']$/g, "")
-        .replace(/[\u200B-\u200D\uFEFF\r\n\t ]/g, "")
-        .trim();
-}
-
-function localEnvGroqKey() {
-    try {
-        const envPath = path.join(process.cwd(), ".env.local");
-        const envText = fs.readFileSync(envPath, "utf8");
-        const line = envText
-            .split("\n")
-            .find((entry) => entry.trim().startsWith("GROQ_API_KEY="));
-        if (!line) {
-            return "";
-        }
-        return sanitizeApiKey(line.slice(line.indexOf("=") + 1));
-    }
-    catch {
-        return "";
-    }
-}
-
-function groqApiKey() {
-    return localEnvGroqKey() || sanitizeApiKey(process.env.GROQ_API_KEY);
-}
 
 export async function POST(request) {
     const apiKey = groqApiKey();
@@ -52,29 +22,29 @@ export async function POST(request) {
         return NextResponse.json({ ok: false, message: "Audio recording is too large. Please record a shorter message." }, { status: 413 });
     }
 
-    const payload = new FormData();
-    payload.set("model", MODEL);
-    payload.set("file", audio, audio.name || "voice-message.webm");
-
     try {
-        const response = await fetch(GROQ_TRANSCRIPTION_URL, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`
-            },
-            body: payload
+        const result = await fetchGroqJson({
+            url: GROQ_TRANSCRIPTION_URL,
+            apiKey,
+            retryAttempts: 1,
+            fallbackMessage: "Voice transcription failed.",
+            body: () => {
+                const payload = new FormData();
+                payload.set("model", MODEL);
+                payload.set("file", audio, audio.name || "voice-message.webm");
+                return payload;
+            }
         });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
+        if (!result.ok) {
             return NextResponse.json({
                 ok: false,
-                message: data?.error?.message || "Voice transcription failed."
-            }, { status: response.status });
+                message: result.message
+            }, { status: result.status });
         }
         return NextResponse.json({
             ok: true,
             model: MODEL,
-            text: String(data.text || "").trim()
+            text: String(result.data.text || "").trim()
         });
     }
     catch (error) {
