@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1440" viewBox="0 0 1080 1440" role="img" aria-labelledby="title desc">
+  <title id="title">AI-supported healthcare consultation</title>
+  <desc id="desc">A calm clinical desk scene with patient notes, health dashboard cards, a stethoscope, and soft natural light.</desc>
+  <defs>
+    <linearGradient id="wall" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#e7fbf4"/>
+      <stop offset="0.52" stop-color="#bceade"/>
+      <stop offset="1" stop-color="#314f4a"/>
+    </linearGradient>
+    <linearGradient id="desk" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#f8fffb"/>
+      <stop offset="1" stop-color="#d4f5ea"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#10231f"/>
+      <stop offset="1" stop-color="#324c4a"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#10231f" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="1440" fill="url(#wall)"/>
+  <circle cx="120" cy="155" r="260" fill="#ffffff" opacity="0.34"/>
+  <circle cx="910" cy="250" r="180" fill="#daf8ef" opacity="0.42"/>
+  <path d="M0 900C180 820 323 850 500 914C696 984 850 950 1080 846V1440H0Z" fill="#21413c" opacity="0.38"/>
+  <rect x="126" y="223" width="828" height="994" rx="62" fill="#ffffff" opacity="0.5" filter="url(#shadow)"/>
+  <rect x="168" y="270" width="744" height="900" rx="48" fill="#f7fffb"/>
+  <rect x="216" y="338" width="648" height="344" rx="36" fill="url(#screen)"/>
+  <circle cx="286" cy="418" r="34" fill="#adf8ef"/>
+  <rect x="344" y="385" width="252" height="24" rx="12" fill="#daf8ef"/>
+  <rect x="344" y="432" width="392" height="18" rx="9" fill="#9be7d9" opacity="0.82"/>
+  <rect x="344" y="469" width="315" height="18" rx="9" fill="#9be7d9" opacity="0.52"/>
+  <rect x="248" y="532" width="160" height="86" rx="22" fill="#daf8ef" opacity="0.93"/>
+  <rect x="444" y="532" width="160" height="86" rx="22" fill="#daf8ef" opacity="0.78"/>
+  <rect x="640" y="532" width="160" height="86" rx="22" fill="#daf8ef" opacity="0.64"/>
+  <path d="M285 582h32l22-34 29 54 25-35h34" fill="none" stroke="#324c4a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M483 583c20-40 62-40 82 0" fill="none" stroke="#324c4a" stroke-width="12" stroke-linecap="round"/>
+  <path d="M684 574h72M684 602h48" stroke="#324c4a" stroke-width="12" stroke-linecap="round"/>
+  <rect x="214" y="739" width="652" height="308" rx="36" fill="url(#desk)"/>
+  <rect x="270" y="796" width="234" height="160" rx="28" fill="#ffffff" filter="url(#shadow)"/>
+  <rect x="306" y="835" width="132" height="18" rx="9" fill="#324c4a"/>
+  <rect x="306" y="875" width="162" height="14" rx="7" fill="#609665"/>
+  <rect x="306" y="908" width="110" height="14" rx="7" fill="#9be7d9"/>
+  <circle cx="635" cy="862" r="84" fill="#ffffff" filter="url(#shadow)"/>
+  <circle cx="635" cy="862" r="50" fill="none" stroke="#324c4a" stroke-width="18"/>
+  <path d="M635 808v-42c0-38 30-69 68-69 39 0 70 31 70 69v58" fill="none" stroke="#324c4a" stroke-width="22" stroke-linecap="round"/>
+  <path d="M717 824c48 14 72 48 72 101 0 76-61 138-136 138H531" fill="none" stroke="#324c4a" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="804" cy="972" r="24" fill="#adf8ef" stroke="#324c4a" stroke-width="10"/>
+  <path d="M294 1112c98-66 196-66 294 0M466 1067c64-28 124-28 181 0" fill="none" stroke="#adf8ef" stroke-width="18" stroke-linecap="round" opacity="0.72"/>
+  <circle cx="188" cy="1040" r="58" fill="#adf8ef" opacity="0.72"/>
+  <path d="M170 1042c24-18 48-18 72 0M188 1008c16-10 32-10 48 0" fill="none" stroke="#324c4a" stroke-width="10" stroke-linecap="round"/>
+</svg>

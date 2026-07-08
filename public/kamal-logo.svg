@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="KAMAL logo">
+  <defs>
+    <linearGradient id="leaf" x1="9" x2="55" y1="54" y2="8" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#324C4A"/>
+      <stop offset=".58" stop-color="#609665"/>
+      <stop offset="1" stop-color="#9BE7D9"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#DAF8EF"/>
+  <path d="M49.4 12.2C35.2 13 23.6 19.1 18.1 28.7c-4.5 7.9-3.3 16.8 2.4 21.1 4.9 3.7 12.7 2.7 18.4-2.8 7.6-7.3 10.9-20.6 10.5-34.8Z" fill="url(#leaf)"/>
+  <path d="M17.8 49.8c7.6-13.2 17-22.2 28.4-27" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="3.6"/>
+  <circle cx="24" cy="22" r="5" fill="#fff" opacity=".9"/>
+  <path d="M25.8 41.7c3.9 2.4 8.3 2.4 12.8-.3" fill="none" stroke="#DAF8EF" stroke-linecap="round" stroke-width="2.8" opacity=".9"/>
+</svg>
