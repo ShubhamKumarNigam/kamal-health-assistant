@@ -102,7 +102,7 @@ export async function POST(request) {
         apiKey: provider.apiKey,
         model: provider.model,
         temperature: 0.2,
-        maxTokens: 650,
+        maxTokens: 1000,
         fallbackMessage: "The health education model could not answer right now. Please try again.",
         messages: [
             { role: "system", content: systemPrompt() },
