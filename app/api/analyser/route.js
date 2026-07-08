@@ -18,23 +18,69 @@ function stripJsonFence(content) {
 }
 
 function parseJson(content) {
+    const stripped = stripJsonFence(content);
     try {
-        return JSON.parse(stripJsonFence(content));
+        return JSON.parse(stripped);
     }
     catch {
-        const text = String(content || "");
-        const start = text.indexOf("{");
-        const end = text.lastIndexOf("}");
+        const start = stripped.indexOf("{");
+        const end = stripped.lastIndexOf("}");
         if (start >= 0 && end > start) {
             try {
-                return JSON.parse(text.slice(start, end + 1));
+                return JSON.parse(stripped.slice(start, end + 1));
             }
             catch {
-                return null;
+                return parsePartialAnalysisJson(stripped);
             }
         }
     }
-    return null;
+    return parsePartialAnalysisJson(stripped);
+}
+
+function decodeJsonString(value) {
+    try {
+        return JSON.parse(`"${value}"`);
+    }
+    catch {
+        return String(value || "").replace(/\\"/g, "\"").replace(/\\n/g, " ").trim();
+    }
+}
+
+function partialStringField(content, field) {
+    const match = String(content || "").match(new RegExp(`"${field}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"`));
+    return match ? decodeJsonString(match[1]) : "";
+}
+
+function partialArrayField(content, field) {
+    const match = String(content || "").match(new RegExp(`"${field}"\\s*:\\s*\\[([\\s\\S]*?)(?:\\]|$)`));
+    if (!match) {
+        return [];
+    }
+    return [...match[1].matchAll(/"((?:\\.|[^"\\])*)"/g)].map((entry) => decodeJsonString(entry[1]));
+}
+
+function parsePartialAnalysisJson(content) {
+    const fallback = {
+        summary: partialStringField(content, "summary"),
+        findings: partialArrayField(content, "findings"),
+        possibleConcerns: partialArrayField(content, "possibleConcerns"),
+        answer: partialStringField(content, "answer"),
+        recommendedNextSteps: partialArrayField(content, "recommendedNextSteps"),
+        redFlags: partialArrayField(content, "redFlags"),
+        limitations: partialArrayField(content, "limitations"),
+        doctorNote: partialStringField(content, "doctorNote"),
+        caution: partialStringField(content, "caution")
+    };
+    const hasContent = fallback.summary ||
+        fallback.findings.length ||
+        fallback.possibleConcerns.length ||
+        fallback.answer ||
+        fallback.recommendedNextSteps.length ||
+        fallback.redFlags.length ||
+        fallback.limitations.length ||
+        fallback.doctorNote ||
+        fallback.caution;
+    return hasContent ? fallback : null;
 }
 
 function cleanText(value) {
