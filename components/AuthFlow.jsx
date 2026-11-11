@@ -1,4 +1,5 @@
 "use client";
+import { PhoneVerification } from "@/components/PhoneVerification";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,11 +12,11 @@ import { OTP_COOLDOWN_SECONDS } from "@/lib/auth/config";
 function isSafeNextPath(path) {
     return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/login");
 }
-export function AuthFlow({ demoEmail = "", forceGooglePrompt = false, initialError = "", initialMessage = "", nextPath }) {
+export function AuthFlow({ demoEmail = "", forceGooglePrompt = false, initialError = "", initialMessage = "", initialMode = "signin", phoneEnabled = false, nextPath }) {
     const router = useRouter();
     const safeNextPath = isSafeNextPath(nextPath) ? nextPath : "/session";
     const googleAuthHref = `/api/auth/google?next=${encodeURIComponent(safeNextPath)}${forceGooglePrompt ? "&prompt=select_account" : ""}`;
-    const [mode, setMode] = useState(() => demoEmail ? "signin" : "signup");
+    const [mode, setMode] = useState(initialMode === "signup" ? "signup" : "signin");
     const [purpose, setPurpose] = useState("signup_verification");
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -37,7 +38,7 @@ export function AuthFlow({ demoEmail = "", forceGooglePrompt = false, initialErr
             return "Reset your password";
         if (mode === "reset")
             return "Choose a new password";
-        return "Sign in to start your session";
+        return "Welcome back to KAMAL";
     }, [mode]);
     useEffect(() => {
         if (cooldown <= 0)
@@ -179,14 +180,14 @@ export function AuthFlow({ demoEmail = "", forceGooglePrompt = false, initialErr
           <div className="relative z-10 flex h-full flex-col justify-between">
             <p className="inline-flex w-fit items-center gap-2 rounded-full bg-white/12 px-4 py-2 text-sm font-extrabold text-[#daf8ef] ring-1 ring-white/15">
               <ShieldCheck aria-hidden="true" className="h-4 w-4"/>
-              Secure email entry
+              Your personal KAMAL account
             </p>
             <div className="pt-28 lg:pt-0">
               <h1 className="max-w-xl text-4xl font-extrabold leading-tight tracking-normal md:text-6xl">
                 Start care with a calm, private sign in.
               </h1>
               <p className="mt-5 max-w-lg text-base font-medium leading-8 text-[#daf8ef] md:text-lg">
-                Continue with Google to create a verified KAMAL account, or use email code verification when needed.
+                Create an account with Google or email, then return to your personal workspace whenever you need it.
               </p>
             </div>
           </div>
@@ -223,7 +224,7 @@ export function AuthFlow({ demoEmail = "", forceGooglePrompt = false, initialErr
                 {title}
               </h2>
               <p className="mt-3 leading-7 text-[#5b605d]">
-                Google sign-in is the primary account path. Email code verification remains available and every account record is stored in the local SQLite database.
+                Create your own account with Google or verify your email address. Your saved health history, conversations and care tools belong to your account; the exhibition demo is separate.
               </p>
             </div>
 
@@ -249,6 +250,7 @@ export function AuthFlow({ demoEmail = "", forceGooglePrompt = false, initialErr
                 {error}
               </p>) : null}
 
+            {mode === "signin" ? <PhoneVerification enabled={phoneEnabled} nextPath={safeNextPath}/> : null}
             {mode === "signin" ? (<form className="space-y-4" onSubmit={submitSignIn}>
                 {demoEmail ? (<div className="kamal-demo-account-card rounded-2xl border border-[#0ea5e9]/20 bg-[#effcff] p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
