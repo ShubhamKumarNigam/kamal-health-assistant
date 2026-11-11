@@ -7,8 +7,8 @@ import {phoneAuthConfigured} from '@/lib/auth/phoneProvider';
 export const runtime = 'nodejs';
 const FLOW_COOKIE = 'kamal_phone_flow';
 export async function POST(request) {
-  const origin = new URL(request.url).origin;
-  if (request.headers.get('origin') !== origin) return NextResponse.json({ok:false,message:'Please use the KAMAL website.'},{status:403});
+  const origin = URL.parse(request.headers.get('origin') || '');
+  if (!origin || origin.host !== request.headers.get('host') || (process.env.VERCEL && origin.protocol !== 'https:')) return NextResponse.json({ok:false,message:'Please use the KAMAL website.'},{status:403});
   if (!phoneAuthConfigured()) return NextResponse.json({ok:false,message:'Mobile sign-in is not available yet. Use Google or email.'},{status:503});
   const data = await request.json().catch(() => null);
   if (!data || !['start','check'].includes(data.action)) return NextResponse.json({ok:false,message:'Invalid request.'},{status:400});
@@ -21,7 +21,7 @@ export async function POST(request) {
       ? await startPhoneChallenge({phone:data.phone,purpose:data.purpose,user,ip})
       : await finishPhoneChallenge({token:jar.get(FLOW_COOKIE)?.value,code:data.code,user});
     const response = NextResponse.json({...result,token:undefined,sessionToken:undefined,authenticated:Boolean(result.sessionToken)}, {status:result.ok?200:result.status,headers:{'Cache-Control':'no-store'}});
-    const cookieOptions = {httpOnly:true,secure:new URL(request.url).protocol==='https:',sameSite:'strict',path:'/'};
+    const cookieOptions = {httpOnly:true,secure:Boolean(process.env.VERCEL)||new URL(request.url).protocol==='https:',sameSite:'strict',path:'/'};
     if (result.token) response.cookies.set(FLOW_COOKIE,result.token,{...cookieOptions,maxAge:600});
     if (result.ok && data.action==='check') response.cookies.set(FLOW_COOKIE,'',{...cookieOptions,maxAge:0});
     if (result.sessionToken) response.cookies.set(SESSION_COOKIE,result.sessionToken,{...cookieOptions,sameSite:'lax',maxAge:30*24*60*60});
