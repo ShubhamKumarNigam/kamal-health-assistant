@@ -200,7 +200,7 @@ function Landing({ onEnter }: { onEnter: () => void }) {
           <a href="#privacy">Built around you</a>
           <a href="#vision">Our vision</a>
         </nav>
-        <a className="button account-entry" href="/workspace">My account</a>
+        <a className="button account-entry" href="/workspace">Sign in</a>
         <button className="button primary" onClick={onEnter}>
           Try Demo <ArrowRight size={16} />
         </button>
@@ -226,9 +226,9 @@ function Landing({ onEnter }: { onEnter: () => void }) {
               language, and helps you notice what matters next.
             </p>
             <div className="hero-actions">
-              <button className="button primary large" onClick={onEnter}>
-                Explore KAMAL <ArrowRight size={18} />
-              </button>
+              <a className="button primary large" href="/login?mode=signup&amp;next=/workspace">
+                Create your account <ArrowRight size={18} />
+              </a>
               <a className="text-link" href="#story">
                 Discover the story <span>↗</span>
               </a>

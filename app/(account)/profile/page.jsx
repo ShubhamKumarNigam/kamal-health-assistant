@@ -1,3 +1,5 @@
+import { PhoneVerification } from "@/components/PhoneVerification";
+import { phoneAuthConfigured } from "@/lib/auth/phoneProvider";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
@@ -53,6 +55,7 @@ export default async function ProfilePage() {
                   KAMAL keeps this browser signed in with a secure session cookie. Use this profile action when you want to end the session.
                 </p>
               </div>
+              <PhoneVerification enabled={phoneAuthConfigured()} purpose="link" />
               <ProfileLogoutButton />
             </div>
           </div>
