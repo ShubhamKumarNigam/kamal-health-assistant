@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { searchUserNames } from "@/lib/auth/sqliteStore";
+import { cookies } from "next/headers";
+import { SESSION_COOKIE, getUserBySessionToken } from "@/lib/auth/sqliteStore";
 
 export const runtime = "nodejs";
 
@@ -47,14 +48,14 @@ function matchesQuery(item, query) {
 }
 
 export async function GET(request) {
+    const jar = await cookies();
+    const user = await getUserBySessionToken(jar.get(SESSION_COOKIE)?.value);
+    if (!user) return NextResponse.json({ok:false,message:"Please sign in first."},{status:401});
     const query = String(request.nextUrl.searchParams.get("q") || "").trim();
     const appResults = query ? appSearchItems.filter((item) => matchesQuery(item, query)) : [];
-    const patientResults = (await searchUserNames(query)).map((user) => ({
-        ...user,
-        type: "Patient"
-    }));
+
     return NextResponse.json({
         ok: true,
-        results: [...appResults, ...patientResults]
+        results: appResults
     });
 }
