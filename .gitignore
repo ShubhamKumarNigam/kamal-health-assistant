@@ -20,3 +20,8 @@ kamal.db.*
 *.sqlite3
 .vercel
 .env*
+public/showcase-assets/
+*.tsbuildinfo
+apps/mobile/node_modules/
+apps/mobile/dist/
+apps/mobile/.expo/

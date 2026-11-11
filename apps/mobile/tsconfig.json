@@ -1,0 +1,12 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": { "strict": true },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../../packages/health-core/**/*.ts",
+    "../../packages/demo-data/**/*.ts",
+    "../../packages/internationalization/**/*.ts",
+    "../../packages/ai/**/*.ts"
+  ]
+}

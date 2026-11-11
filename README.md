@@ -2,6 +2,11 @@
 
 KAMAL is a **Next.js** web application that provides a multilingual AI-powered health assistant workflow. It helps patients through onboarding, guided diagnosis, report generation, medication reminders, and more — all with multilingual support.
 
+## Integrated KAMAL experience
+
+The public homepage and `/demo` use the new KAMAL showcase with larger, responsive typography. `/workspace` opens the authenticated account hub; existing sign-in, Google OAuth, patient workflows and API routes retain their contracts. Demo records are synthetic and separate from account data.
+
+See [integration notes](docs/showcase-integration.md) for routing, verification and deployment details. Run `npm test`, `npm run typecheck`, `npm run lint` and `npm run build` before deployment. PDF/OCR/font assets are generated automatically during prebuild. Native Expo source is in `apps/mobile`.
 ## Features
 
 - **Patient Onboarding** — Age, gender, allergies, and health concern collection
@@ -18,7 +23,7 @@ KAMAL is a **Next.js** web application that provides a multilingual AI-powered h
 
 | Layer          | Technology                          |
 | -------------- | ----------------------------------- |
-| Framework      | Next.js 15.1, React 19              |
+| Framework      | Next.js 15.5, React 19              |
 | Styling        | Tailwind CSS 3.4                    |
 | Database       | Neon Postgres via `@neondatabase/serverless` |
 | AI Services    | OpenCode Go / MiMo for chat and multimodal analysis; Groq Whisper for audio transcription fallback |
