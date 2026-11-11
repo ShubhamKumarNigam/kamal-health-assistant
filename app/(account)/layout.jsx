@@ -1,4 +1,4 @@
-import "./globals.css";
+import "../globals.css";
 import { LanguageProvider } from "@/components/LanguageProvider";
 export const metadata = {
     title: "KAMAL Health Assistant",

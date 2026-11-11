@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bell, ClipboardList, FileText, ImageUp, Leaf, MessageCircle, Search, ShieldPlus, Utensils, User } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 const navItems = [
-    { href: "/", label: "Home", icon: Leaf },
+    { href: "/workspace", label: "My workspace", icon: Leaf },
     { href: "/session", label: "Session", icon: MessageCircle },
     { href: "/onboarding/history", label: "History", icon: ClipboardList },
     { href: "/reminders", label: "Reminders", icon: Bell },

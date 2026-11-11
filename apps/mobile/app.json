@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "KAMAL Health",
+    "slug": "kamal-health",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "health.kamal.showcase",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Unlock your locally encrypted KAMAL health vault."
+      }
+    },
+    "android": { "package": "health.kamal.showcase" },
+    "plugins": [
+      ["expo-sqlite", { "useSQLCipher": true }],
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        { "faceIDPermission": "Unlock your local health vault." }
+      ],
+      "expo-document-picker",
+      "expo-notifications"
+    ]
+  }
+}
