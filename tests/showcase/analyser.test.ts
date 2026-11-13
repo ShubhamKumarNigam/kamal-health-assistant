@@ -23,7 +23,7 @@ test('provider payload and errors survive a mocked completion request', async ()
     return new Response(JSON.stringify({error:{message:'model is decommissioned'}}), {status:400});
   };
   try {
-    const result = await fetchChatCompletion({url:'https://api.groq.com/openai/v1/chat/completions', apiKey:'test', model:'test', messages:[], maxTokens:6000, response_format:{type:'json_object'}});
+    const result = await fetchChatCompletion({url:'https://api.groq.com/openai/v1/chat/completions', apiKey:'test', model:'test', messages:[], maxTokens:6000, response_format:{type:'json_object'}, fallbackMessage:'Unavailable', retryAttempts:0});
     assert.equal(body.max_tokens, 6000);
     assert.equal(body.response_format.type, 'json_object');
     assert.equal(result.ok, false);

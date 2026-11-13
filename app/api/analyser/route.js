@@ -182,7 +182,7 @@ export async function POST(request) {
     const jar = await cookies();
     const user = await getUserBySessionToken(jar.get(SESSION_COOKIE)?.value);
     if (!user) return NextResponse.json({ok: false, message: "Please sign in to analyse a report."}, {status: 401});
-    const provider = chatProviderConfig({ fallbackModel: process.env.KAMAL_ANALYSER_MODEL || GROQ_FALLBACK_MODEL, providerPreference: process.env.KAMAL_ANALYSER_PROVIDER });
+    const provider = chatProviderConfig({ fallbackModel: process.env.KAMAL_ANALYSER_MODEL || GROQ_FALLBACK_MODEL, providerPreference: process.env.KAMAL_ANALYSER_PROVIDER || "groq" });
     if (!provider) {
         return NextResponse.json({ ok: false, message: "AI provider is not configured. Set OPENCODE_API_KEY or GROQ_API_KEY." }, { status: 503 });
     }
