@@ -149,6 +149,8 @@ export async function POST(request) {
     const query = String(form.get("query") || "").trim();
     const file = form.get("file");
     const reportText = String(form.get("reportText") || "").trim();
+    const sectionMode = form.get("sectionMode") === "true";
+    if (sectionMode && (Buffer.byteLength(reportText, "utf8") > 3500 || Buffer.byteLength(query, "utf8") > 1000)) return NextResponse.json({ok:false, message:"Please use a shorter question (up to 1,000 bytes) or a smaller report section."}, {status:413});
     if (reportText.length > MAX_REPORT_CHARS || query.length > 10000) return NextResponse.json({ok:false, message:"Please split the report or shorten your question."}, {status:413});
     if (!query && !reportText && !(file instanceof File && file.size > 0)) {
         return NextResponse.json({ ok: false, message: "Add a query or upload a report/image to analyse." }, { status: 400 });
@@ -214,12 +216,13 @@ export async function POST(request) {
             apiKey: provider.apiKey,
             model: provider.model,
             temperature: 0.15,
-            maxTokens: 6000,
+            maxTokens: sectionMode ? 2200 : 6000,
+            ...(provider.id === "groq" ? {reasoning_effort:"low"} : {}),
             retryAttempts: 0,
             response_format: {type: "json_object"},
             fallbackMessage: "The analyser model could not respond. Please try again.",
             messages: [
-                { role: "system", content: systemPrompt() },
+                { role: "system", content: systemPrompt() + (sectionMode ? "\nThis may be one section of a larger report. Only describe this section, do not assume it is the whole report. If a result's unit or reference range is absent, say it cannot be classified. Keep JSON concise; do not drop provided abnormal results to shorten your answer." : "") },
                 userMessage
             ]
         });

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, AlertCircle, ClipboardCheck, Download, FileText, FileWarning, ImageUp, ListChecks, Loader2, Send, ShieldCheck, Stethoscope, TriangleAlert } from "lucide-react";
 import { readReportText } from "@/lib/reportText";
+import { analyseReportSections } from "@/lib/reportSections";
 import { ClinicalCard } from "@/components/ClinicalCard";
 
 const initialForm = {
@@ -79,6 +80,8 @@ export function AnalyserForm() {
     const [file, setFile] = useState(null);
     const [status, setStatus] = useState({ type: "idle", message: "" });
     const [analysis, setAnalysis] = useState(null);
+    const requestController = useRef(null);
+    useEffect(() => () => requestController.current?.abort(), []);
     const isSubmitting = status.type === "loading";
     const reportText = useMemo(() => buildReportText(analysis), [analysis]);
 
@@ -95,6 +98,8 @@ export function AnalyserForm() {
         event.preventDefault();
         setStatus({ type: "loading", message: "Analysing patient information..." });
         setAnalysis(null);
+        const controller = new AbortController();
+        requestController.current = controller;
 
         const payload = new FormData();
         payload.set("query", form.query);
@@ -107,20 +112,12 @@ export function AnalyserForm() {
                 payload.set("fileType", file.type);
                 payload.set("fileSize", String(file.size));
             }
-            setStatus({type:"loading", message:"Analysing report text…"});
-            const response = await fetch("/api/analyser", {
-                method: "POST",
-                body: payload
-            });
-            const result = await response.json().catch(() => ({message: response.status === 413 ? "The request is too large. Please split the report." : "The analyser is temporarily unavailable. Please try again."}));
-            if (!response.ok || !result.ok) {
-                setStatus({ type: "error", message: result.message || "The analyser could not process this file." });
-                return;
-            }
-            setAnalysis(result.analysis);
+            const result = await analyseReportSections(payload, {signal:controller.signal, progress:message => setStatus({type:"loading", message})});
+            setAnalysis(result);
             setStatus({ type: "success", message: "Analysis complete." });
         }
         catch (error) {
+            if (error.name === "AbortError") {setStatus({type:"idle", message:"Analysis cancelled. No complete report was produced."}); return;}
             setStatus({ type: "error", message: error.message || "The analyser could not connect. Please try again." });
         }
     }
@@ -178,6 +175,7 @@ export function AnalyserForm() {
             {isSubmitting ? (<Loader2 aria-hidden="true" className="h-5 w-5 animate-spin"/>) : (<Send aria-hidden="true" className="h-5 w-5"/>)}
             <span>{isSubmitting ? "Analysing..." : "Send to analyser"}</span>
           </button>
+          {isSubmitting ? <button type="button" onClick={() => requestController.current?.abort()} className="touch-target font-bold text-primary">Cancel analysis</button> : null}
         </form>
       </section>
 
