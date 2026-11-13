@@ -8,4 +8,6 @@ For an owner-managed Groq account, set production `GROQ_API_KEY` securely and `K
 
 The previous analyser returned HTTP 400 from the provider with a generic message. It also used a regex against PDF bytes, which cannot decode ordinary compressed/scanned PDFs, and a retired Groq Scout fallback. The exact legacy OpenCode rejection was not logged. New diagnostics log only provider, model, status and a categorical error code, never report text, credentials or raw provider messages.
 
+On 13 November 2026, production diagnostics confirmed that the owner's long report was rejected by Groq with HTTP 413. This is a request allowance failure, not temporary model congestion. HTTP 413 must never enter rate-limit retry handling, even when the provider mentions tokens per minute. The UI now tells users to split the report or increase the provider allowance. Full-report production validation remains pending an adequate provider allowance or a replacement provider.
+
 Validation: unit tests for text limits and sanitized provider errors; browser tests of a compressed two-page synthetic PDF and scanned synthetic PDF; production build, lint and typecheck. Complete a live synthetic report test after the owner enters the provider key. A successful build alone does not prove provider access or billing readiness.
