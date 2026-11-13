@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Activity, AlertCircle, ClipboardCheck, Download, FileText, FileWarning, ImageUp, ListChecks, Loader2, Send, ShieldCheck, Stethoscope, TriangleAlert } from "lucide-react";
+import { readReportText } from "@/lib/reportText";
 import { ClinicalCard } from "@/components/ClinicalCard";
 
 const initialForm = {
@@ -97,16 +98,21 @@ export function AnalyserForm() {
 
         const payload = new FormData();
         payload.set("query", form.query);
-        if (file) {
-            payload.set("file", file);
-        }
-
         try {
+            if (file) {
+                const report = await readReportText(file, message => setStatus({type:"loading", message}));
+                payload.set("reportText", report.text);
+                payload.set("usedOcr", String(report.usedOcr));
+                payload.set("fileName", file.name);
+                payload.set("fileType", file.type);
+                payload.set("fileSize", String(file.size));
+            }
+            setStatus({type:"loading", message:"Analysing report text…"});
             const response = await fetch("/api/analyser", {
                 method: "POST",
                 body: payload
             });
-            const result = await response.json();
+            const result = await response.json().catch(() => ({message: response.status === 413 ? "The request is too large. Please split the report." : "The analyser is temporarily unavailable. Please try again."}));
             if (!response.ok || !result.ok) {
                 setStatus({ type: "error", message: result.message || "The analyser could not process this file." });
                 return;
@@ -114,8 +120,8 @@ export function AnalyserForm() {
             setAnalysis(result.analysis);
             setStatus({ type: "success", message: "Analysis complete." });
         }
-        catch {
-            setStatus({ type: "error", message: "The analyser could not connect. Please try again." });
+        catch (error) {
+            setStatus({ type: "error", message: error.message || "The analyser could not connect. Please try again." });
         }
     }
 
@@ -135,32 +141,32 @@ export function AnalyserForm() {
           <div>
             <div className="flex items-center gap-2 text-xl font-bold text-text-primary">
               <Stethoscope aria-hidden="true" className="h-6 w-6 text-primary"/>
-              <h2>Patient analyser</h2>
+              <h2>Report analyser</h2>
             </div>
             <p className="mt-2 leading-7 text-text-secondary">
-              Upload a PDF, document, JPEG, or report image and add the question you want checked.
+              Upload a report PDF, image or text file and add your question. PDFs are decoded on your device; scanned pages use text recognition. Extracted text is sent to the configured AI service.
             </p>
           </div>
         </div>
 
         <form className="mt-5 grid gap-5" onSubmit={submitForm}>
           <label className="block">
-            <span className="mb-2 block text-sm font-bold text-text-primary">Upload file or image</span>
+            <span className="mb-2 block text-sm font-bold text-text-primary">Upload report PDF or image</span>
             <span className="flex min-h-[150px] cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-[#609665]/60 bg-[#DAF8EF]/60 p-5 text-center transition hover:bg-[#DAF8EF]">
               <ImageUp aria-hidden="true" className="h-9 w-9 text-primary"/>
               <span className="font-bold text-text-primary">
-                {file ? file.name : "Choose PDF, document, JPEG, PNG, or report file"}
+                {file ? file.name : "Choose a PDF, report image, TXT or CSV file"}
               </span>
               <span className="text-sm font-semibold text-text-secondary">
                 {file ? `${file.type || "Unknown type"} - ${formatBytes(file.size)}` : "Maximum upload: 8 MB"}
               </span>
-              <input accept=".pdf,.txt,.csv,.md,.json,.jpg,.jpeg,.png,.webp,.rtf,image/*,application/pdf,text/*" className="sr-only" onChange={updateFile} type="file"/>
+              <input accept=".pdf,.txt,.csv,.md,.jpg,.jpeg,.png,.webp" className="sr-only" onChange={updateFile} type="file"/>
             </span>
           </label>
 
           <label className="block">
             <span className="mb-2 block text-sm font-bold text-text-primary">Query for analyser</span>
-            <textarea className="min-h-32 w-full rounded-lg border border-border bg-[#edf8ef] px-4 py-3 text-text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none" name="query" onChange={updateField} placeholder="Ask what you want to understand from this report, X-ray, or diagnosis document." rows={5} value={form.query}/>
+            <textarea className="min-h-32 w-full rounded-lg border border-border bg-[#edf8ef] px-4 py-3 text-text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none" name="query" onChange={updateField} placeholder="Ask which report values are outside their printed reference intervals." rows={5} value={form.query}/>
           </label>
 
           {status.message ? (<p className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ${status.type === "error" ? "bg-red-50 text-emergency" : "bg-teal-50 text-primary"}`}>
@@ -249,7 +255,7 @@ export function AnalyserForm() {
             <div className="flex gap-3">
               <FileText aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-primary"/>
               <p>
-                The analyser is for explanation and triage support. A doctor should confirm diagnosis, X-ray findings, and treatment decisions.
+                This tool explains report text; it does not interpret X-rays or scans. Check extracted values against the original and ask a clinician to confirm important findings.
               </p>
             </div>
           </ClinicalCard>
