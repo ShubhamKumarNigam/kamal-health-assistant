@@ -223,7 +223,7 @@ export function AnalyserForm() {
               <section className="rounded-lg border border-border bg-[#F8FAFC] p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <Stethoscope aria-hidden="true" className="h-5 w-5 text-primary"/>
-                  <h3 className="text-base font-extrabold text-text-primary">Doctor confirmation</h3>
+                <h3 className="text-base font-extrabold text-text-primary">Clinician review needed</h3>
                 </div>
                 <p className="leading-7 text-text-secondary">{analysis.doctorNote}</p>
                 <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold leading-6 text-amber-900">
