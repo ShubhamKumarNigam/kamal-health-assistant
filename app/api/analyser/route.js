@@ -95,7 +95,7 @@ function normalizeAnalysis(raw, fallback) {
         recommendedNextSteps: toList(raw?.recommendedNextSteps),
         redFlags: toList(raw?.redFlags),
         limitations: toList(raw?.limitations),
-        doctorNote: String(raw?.doctorNote || DEFAULT_CAUTION).trim(),
+        doctorNote: "A qualified clinician should review the original report and confirm important findings. This AI-generated report has not been reviewed by a doctor.",
         caution: String(raw?.caution || DEFAULT_CAUTION).trim()
     };
 }
