@@ -1,0 +1,11 @@
+# Report analyser
+
+The report analyser decodes PDFs locally with PDF.js and uses locally hosted English Tesseract OCR assets for scanned pages and report images. It sends extracted text, file metadata and the user's query to the configured provider. No report is stored by this route. OCR results must be checked against the original. It does not interpret radiology images.
+
+Limits: 8 MB source file, 30 PDF pages, 80,000 extracted characters and 10,000 query characters. An unreadable page or oversized extracted text stops submission rather than silently truncating it. The API requires an existing authenticated session. Provider requests time out after 45 seconds; incomplete model output is rejected.
+
+For an owner-managed Groq account, set production `GROQ_API_KEY` securely and `KAMAL_ANALYSER_PROVIDER=groq`. The analyser default is `openai/gpt-oss-120b`; optionally set `KAMAL_ANALYSER_MODEL`. Other tools continue to use their existing `KAMAL_AI_PROVIDER` configuration. Raw medical-image attachments in session are rejected with a clear limitation when this text-only analyser configuration is selected.
+
+The previous analyser returned HTTP 400 from the provider with a generic message. It also used a regex against PDF bytes, which cannot decode ordinary compressed/scanned PDFs, and a retired Groq Scout fallback. The exact legacy OpenCode rejection was not logged. New diagnostics log only provider, model, status and a categorical error code, never report text, credentials or raw provider messages.
+
+Validation: unit tests for text limits and sanitized provider errors; browser tests of a compressed two-page synthetic PDF and scanned synthetic PDF; production build, lint and typecheck. Complete a live synthetic report test after the owner enters the provider key. A successful build alone does not prove provider access or billing readiness.
