@@ -1,6 +1,7 @@
 import { PhoneVerification } from "@/components/PhoneVerification";
 import { phoneAuthConfigured } from "@/lib/auth/phoneProvider";
 import { cookies } from "next/headers";
+import { LocationPreference } from '@/components/LocationPreference';
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { ClinicalCard } from "@/components/ClinicalCard";
@@ -60,6 +61,7 @@ export default async function ProfilePage() {
             </div>
           </div>
         </section>
+        <div className="lg:col-span-2"><LocationPreference /></div>
         <div className="lg:col-span-2">
           <ClinicalCard title="Language">
             <ProfileLanguageButtons />

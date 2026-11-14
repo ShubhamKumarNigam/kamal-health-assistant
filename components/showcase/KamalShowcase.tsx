@@ -125,8 +125,7 @@ function Logo() {
   return (
     <span className="logo">
       <span className="logo-mark">
-        <Heart size={23} />
-        <span />
+        <img src="/kamal-logo.svg" alt="" width={48} height={48}/>
       </span>
       <span>
         KAMAL<span className="logo-health">HEALTH</span>

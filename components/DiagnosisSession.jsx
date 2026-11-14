@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { readReportText } from "@/lib/reportText";
+import { UserAvatar } from "@/components/UserAvatar";
 import { useMemo, useRef, useState } from "react";
 import { AlertTriangle, ClipboardCheck, ImagePlus, Loader2, Mic, Send, ShieldAlert, Square, Stethoscope, UserRound, X } from "lucide-react";
 
 function messageLabel(role) {
-    return role === "assistant" ? "Doctor AI" : "You";
+    return role === "assistant" ? "KAMAL" : "You";
 }
 
 function quickAnswersForQuestion(question) {
@@ -41,11 +43,11 @@ function DiagnosisPanel({ diagnosis }) {
     return (<div className="mt-5 rounded-2xl border border-[#ADF8EF]/30 bg-white/95 p-5 text-[#10231f]">
       <div className="flex items-center gap-2 text-lg font-extrabold">
         <ClipboardCheck aria-hidden="true" className="h-5 w-5 text-[#19C37D]"/>
-        <h3>Diagnosis saved to history</h3>
+        <h3>Conversation summary saved</h3>
       </div>
       <dl className="mt-4 grid gap-4">
         <div>
-          <dt className="text-xs font-extrabold uppercase tracking-normal text-[#324C4A]">Final disease or condition</dt>
+          <dt className="text-xs font-extrabold uppercase tracking-normal text-[#324C4A]">Assessment status</dt>
           <dd className="mt-1 text-xl font-extrabold">{diagnosis.primaryDisease || likelyConditions[0] || "Not specified"}</dd>
         </div>
         <div>
@@ -94,7 +96,7 @@ function buildImageAnalysisContext(analysis) {
         return "";
     }
     return [
-        "Image analysis from vision model:",
+        "Unverified text extracted from a report:",
         `Summary: ${analysis.summary || "Not specified"}`,
         `Answer: ${analysis.answer || "Not specified"}`,
         listText("Findings", analysis.findings),
@@ -107,18 +109,18 @@ function buildImageAnalysisContext(analysis) {
     ].join("\n");
 }
 
-export function DiagnosisSession({ user, intake }) {
+export function DiagnosisSession({ user, intake, draft }) {
     const preConsultationMessage = useMemo(() => ({
         role: "user",
         content: intake.mainConcern
     }), [intake.mainConcern]);
-    const [messages, setMessages] = useState([preConsultationMessage]);
+    const [messages, setMessages] = useState(draft?.messages?.length ? draft.messages : intake.mainConcern ? [preConsultationMessage] : [{role:"assistant",content:"What would you like to talk about today? You can start without filling in any patient details."}]);
     const [reply, setReply] = useState("");
     const [attachment, setAttachment] = useState(null);
-    const [status, setStatus] = useState("ready");
+    const [status, setStatus] = useState(draft?.result ? "complete" : "ready");
     const [voiceStatus, setVoiceStatus] = useState("idle");
     const [error, setError] = useState("");
-    const [diagnosis, setDiagnosis] = useState(null);
+    const [diagnosis, setDiagnosis] = useState(draft?.result?.diagnosis || null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
     const mediaRecorderRef = useRef(null);
@@ -131,27 +133,12 @@ export function DiagnosisSession({ user, intake }) {
     const hasStarted = messages.some((message) => message.role === "assistant");
     const latestAssistantQuestion = useMemo(() => [...messages].reverse().find((message) => message.role === "assistant")?.content || "", [messages]);
     const quickAnswers = useMemo(() => quickAnswersForQuestion(latestAssistantQuestion), [latestAssistantQuestion]);
-    const cautionText = diagnosis?.caution || "Caution: This is AI-assisted health guidance, not a final medical diagnosis. Seek urgent medical care for severe, sudden, worsening, or emergency symptoms.";
+    const cautionText = diagnosis?.caution || "KAMAL provides health information and organisation support. It does not replace a qualified healthcare professional.";
 
-    async function analyseImageForSession(file, patientReply) {
-        const payload = new FormData();
-        payload.set("query", [
-            "Analyze this uploaded image for the current doctor-style diagnosis session.",
-            "Describe only clinically relevant visible findings and limitations.",
-            "Do not diagnose with certainty.",
-            patientReply ? `Patient reply/context: ${patientReply}` : "The patient attached this image without extra text."
-        ].join("\n"));
-        payload.set("file", file);
-
-        const response = await fetch("/api/analyser", {
-            method: "POST",
-            body: payload
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok || !result.ok) {
-            throw new Error(result.message || "Image analysis failed.");
-        }
-        return result.analysis;
+    async function analyseImageForSession(file) {
+        const extracted = await readReportText(file);
+        if (new TextEncoder().encode(extracted.text).length > 6000) throw new Error("This report is too large for a conversation attachment. Use the Report analyser, then bring the relevant values here.");
+        return {summary:"Unverified report text",answer:extracted.text,limitations:["Check extracted text and units against the original. This is not medical-image interpretation."],doctorNote:"No clinician has reviewed this extraction."};
     }
 
     async function askDoctor(nextMessages) {
@@ -229,6 +216,7 @@ export function DiagnosisSession({ user, intake }) {
                 ].join("\n")
                 : content,
             attachmentName: attachment?.name || "",
+            attachmentType: attachment?.file?.type || "",
             attachmentUrl: attachment?.url || "",
             imageAnalysisSummary: imageAnalysis?.summary || ""
         }];
@@ -249,8 +237,8 @@ export function DiagnosisSession({ user, intake }) {
         if (!file) {
             return;
         }
-        if (!file.type.startsWith("image/")) {
-            setError("Please choose an image file.");
+        if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
+            setError("Choose a report image or PDF.");
             event.target.value = "";
             return;
         }
@@ -353,16 +341,16 @@ export function DiagnosisSession({ user, intake }) {
         requestAnimationFrame(() => inputRef.current?.focus());
     }
 
-    return (<div className="overflow-hidden rounded-3xl border border-[#ADF8EF]/20 bg-[#324C4A] shadow-[0_28px_80px_rgba(0,0,0,0.18)]">
+    return (<div className="care-conversation overflow-hidden rounded-3xl border border-[#ADF8EF]/20 bg-[#324C4A] shadow-[0_28px_80px_rgba(0,0,0,0.18)]">
       <section className="flex min-h-[680px] flex-col bg-[#324C4A] p-5 md:p-8">
         <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#ADF8EF]/18 bg-white/10 p-5 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xl font-extrabold text-white">
               <Stethoscope aria-hidden="true" className="h-5 w-5 text-[#ADF8EF]"/>
-              <h2>Multilingual doctor session</h2>
+              <h2>Your health, in your own words</h2>
             </div>
             <p className="mt-2 font-medium leading-7 text-[#ADF8EF]">
-              The model asks one focused follow-up at a time, keeps to the health concern, and saves the completed diagnosis to history.
+              Your messages are saved to your account. KAMAL asks focused questions and prepares a summary for clinician review.
             </p>
           </div>
           <span className="inline-flex items-center gap-2 rounded-lg bg-[#ADF8EF] px-3 py-2 text-sm font-extrabold text-[#10231f] shadow-[0_10px_24px_rgba(0,0,0,0.16)]">
@@ -377,23 +365,23 @@ export function DiagnosisSession({ user, intake }) {
               : "ml-auto bg-[#DFF4FF] text-[#324C4A]"}`} key={`${message.role}-${index}`}>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-sm font-extrabold">{messageLabel(message.role)}</p>
-                <span className="text-xs font-bold opacity-70">{index === 0 ? "Starting concern" : "Turn " + index}</span>
+                <UserAvatar name={message.role === "assistant" ? "KAMAL" : user.name} assistant={message.role === "assistant"}/>
               </div>
               <p className="whitespace-pre-wrap font-medium leading-7">{message.content}</p>
               {message.attachmentUrl ? (<div className="mt-4 overflow-hidden rounded-xl border border-[#324C4A]/15 bg-white/60">
-                  <img alt={message.attachmentName || "Attached image"} className="max-h-64 w-full object-contain" src={message.attachmentUrl}/>
+                  {message.attachmentType !== "application/pdf" ? <img alt={message.attachmentName || "Attached image"} className="max-h-64 w-full object-contain" src={message.attachmentUrl}/> : <p className="p-4">PDF report attached</p>}
                   <p className="border-t border-[#324C4A]/10 px-3 py-2 text-xs font-bold opacity-70">
                     {message.attachmentName}
                   </p>
                 </div>) : null}
               {message.imageAnalysisSummary ? (<div className="mt-3 rounded-xl border border-[#324C4A]/15 bg-white/60 px-3 py-2 text-sm font-semibold leading-6">
-                  Vision analysis sent to Doctor AI: {message.imageAnalysisSummary}
+                  Report text shared with KAMAL: {message.imageAnalysisSummary}
                 </div>) : null}
             </article>))}
           {isLoading ? (<article className="mr-auto max-w-3xl rounded-2xl border-l-4 border-l-[#19C37D] bg-[#DAF8EF] p-5 text-[#324C4A] shadow-[0_16px_36px_rgba(0,0,0,0.14)]">
               <p className="flex items-center gap-2 font-extrabold">
                 <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin"/>
-                Doctor AI is reviewing your answer and any attached image analysis...
+                KAMAL is reading your message…
               </p>
             </article>) : null}
           <DiagnosisPanel diagnosis={diagnosis}/>
@@ -405,9 +393,11 @@ export function DiagnosisSession({ user, intake }) {
           <span>{cautionText}</span>
         </p>
 
+        {error && messages.at(-1)?.role === "user" && <button type="button" className="mt-3 min-h-12 rounded-xl bg-white px-5 text-[#183c3a]" disabled={isLoading} onClick={()=>askDoctor(messages).catch(e=>{setStatus("ready");setError(e.message);})}>Retry saved message</button>}
+        <p className="mt-4 text-sm text-white">{intake.useHistory ? "Previous completed conversations: enabled (up to three recent summaries)." : "Previous completed conversations: not used in this conversation."} <Link className="underline" href="/session">Start fresh or change context</Link></p>
         {!hasStarted ? (<button className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#ADF8EF] px-5 py-3 font-extrabold text-[#10231f] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70" disabled={isLoading} onClick={startDiagnosis} type="button">
             {isLoading ? (<Loader2 aria-hidden="true" className="h-5 w-5 animate-spin"/>) : (<Stethoscope aria-hidden="true" className="h-5 w-5"/>)}
-            Start doctor follow-up
+            Talk to KAMAL
           </button>) : (<div className="mt-8 grid gap-3">
             <form className="grid gap-3 md:grid-cols-[1fr_auto]" onSubmit={submitReply}>
               <label className="block">
@@ -420,12 +410,12 @@ export function DiagnosisSession({ user, intake }) {
                       </button>))}
                     </div>
                   </div>) : null}
-                <textarea className="min-h-24 w-full rounded-lg border border-[#ADF8EF]/30 bg-white px-4 py-3 text-[#10231f] placeholder:text-[#5B605D] focus:border-[#ADF8EF] focus:outline-none" disabled={isLoading || isComplete} onChange={(event) => setReply(event.target.value)} placeholder={isComplete ? "Diagnosis is complete and saved." : "Answer the doctor's one follow-up question..."} ref={inputRef} rows={3} value={reply}/>
+                <textarea className="min-h-24 w-full rounded-lg border border-[#ADF8EF]/30 bg-white px-4 py-3 text-[#10231f] placeholder:text-[#5B605D] focus:border-[#ADF8EF] focus:outline-none" disabled={isLoading || isComplete} onChange={(event) => setReply(event.target.value)} placeholder={isComplete ? "Your conversation summary is saved." : "Write your reply…"} ref={inputRef} rows={3} value={reply}/>
                 {attachment ? (<div className="mt-3 flex items-center gap-3 rounded-lg border border-[#ADF8EF]/30 bg-white/10 p-3 text-white">
-                    <img alt="" className="h-14 w-14 rounded-lg object-cover" src={attachment.url}/>
+                    {attachment.file.type !== "application/pdf" ? <img alt="" className="h-14 w-14 rounded-lg object-cover" src={attachment.url}/> : <span>PDF</span>}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-extrabold">{attachment.name}</p>
-                      <p className="text-xs font-semibold text-[#ADF8EF]">Image ready to attach</p>
+                      <p className="text-xs font-semibold text-[#ADF8EF]">Report ready to attach</p>
                     </div>
                     <button aria-label="Remove image" className="grid h-9 w-9 place-items-center rounded-lg bg-white/10 text-white hover:bg-white/20" onClick={clearAttachment} type="button">
                       <X aria-hidden="true" className="h-4 w-4"/>
@@ -436,7 +426,7 @@ export function DiagnosisSession({ user, intake }) {
                   </p>) : null}
               </label>
               <div className="flex gap-2 md:self-end">
-                <input accept="image/*" className="hidden" disabled={isLoading || isComplete} onChange={chooseAttachment} ref={fileInputRef} type="file"/>
+                <input accept="image/*,application/pdf" className="hidden" disabled={isLoading || isComplete} onChange={chooseAttachment} ref={fileInputRef} type="file"/>
                 <button aria-label={isRecording ? "Stop recording" : "Record voice"} className={`inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-[#ADF8EF]/30 transition disabled:cursor-not-allowed disabled:opacity-70 ${isRecording ? "bg-red-50 text-emergency" : "bg-white/10 text-[#ADF8EF] hover:bg-white/20"}`} disabled={isLoading || isComplete || isTranscribing} onClick={toggleVoiceRecording} type="button">
                   {isTranscribing ? (<Loader2 aria-hidden="true" className="h-5 w-5 animate-spin"/>) : isRecording ? (<Square aria-hidden="true" className="h-5 w-5 fill-current"/>) : (<Mic aria-hidden="true" className="h-5 w-5"/>)}
                 </button>
