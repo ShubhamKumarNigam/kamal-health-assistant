@@ -12,7 +12,7 @@ export async function POST(request) {
         return NextResponse.json({ ok: false, message: "Please sign in before starting diagnosis." }, { status: 401 });
     }
     const intake = await getLatestPatientIntake(user.id);
-    if (!intake?.mainConcern) {
+    if (!intake) {
         return NextResponse.json({ ok: false, message: "Save your concern before starting diagnosis." }, { status: 400 });
     }
     const token = createDiagnosisSessionJwt({ userId: user.id, intakeId: intake.id });

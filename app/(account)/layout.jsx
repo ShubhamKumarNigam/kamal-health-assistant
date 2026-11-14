@@ -1,4 +1,6 @@
 import "../globals.css";
+import '@fontsource-variable/dm-sans';
+import './care.css';
 import { LanguageProvider } from "@/components/LanguageProvider";
 export const metadata = {
     title: "KAMAL Health Assistant",

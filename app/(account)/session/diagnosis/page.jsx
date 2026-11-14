@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { DiagnosisSession } from "@/components/DiagnosisSession";
 import { DIAGNOSIS_SESSION_COOKIE, verifyDiagnosisSessionJwt } from "@/lib/auth/diagnosisSessionJwt";
-import { SESSION_COOKIE, getLatestPatientIntake, getUserBySessionToken } from "@/lib/auth/sqliteStore";
+import { SESSION_COOKIE, getLatestPatientIntake, getUserBySessionToken, getConversationDraft } from "@/lib/auth/sqliteStore";
 
 export default async function DiagnosisPage() {
     const cookieStore = await cookies();
@@ -12,7 +12,7 @@ export default async function DiagnosisPage() {
         redirect("/login?next=/session");
     }
     const intake = await getLatestPatientIntake(user.id);
-    if (!intake?.mainConcern) {
+    if (!intake) {
         redirect("/session");
     }
     const hasDiagnosisSession = verifyDiagnosisSessionJwt(cookieStore.get(DIAGNOSIS_SESSION_COOKIE)?.value, {
@@ -22,7 +22,8 @@ export default async function DiagnosisPage() {
     if (!hasDiagnosisSession) {
         redirect("/session");
     }
-    return (<AppShell description="Answer one focused follow-up at a time. KAMAL saves the completed diagnosis to history." eyebrow="Doctor follow-up" title="Diagnosis session" variant="dark">
-      <DiagnosisSession intake={intake} user={user}/>
+    const draft = await getConversationDraft(user.id,intake.id);
+    return (<AppShell description="Talk through your concern, keep the useful context, and prepare questions for your clinician." eyebrow="ASK KAMAL" title="A conversation that remembers">
+      <DiagnosisSession intake={intake} user={user} draft={draft}/>
     </AppShell>);
 }

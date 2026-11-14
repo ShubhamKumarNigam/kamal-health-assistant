@@ -1,17 +1,15 @@
 import Link from 'next/link';
 import {cookies} from 'next/headers';
 import {redirect} from 'next/navigation';
-import {Activity,ArrowRight,Bell,FileText,FolderHeart,MessageCircle,Search,ShieldCheck,User} from 'lucide-react';
+import {Activity,ArrowUpRight,Bell,FileText,MessageCircle,ShieldCheck} from 'lucide-react';
 import {AppShell} from '@/components/AppShell';
-import {SESSION_COOKIE,getUserBySessionToken} from '@/lib/auth/sqliteStore';
-const tools=[
- ['/session','Start a health conversation','Continue the existing guided session with your saved patient context.',MessageCircle],
- ['/onboarding/history','Your health history','Review your saved records and previous sessions.',FolderHeart],
- ['/image-upload','Analyse a document','Use the existing document and image analysis service.',FileText],
- ['/reminders','Your care reminders','Manage saved reminders and notification settings.',Bell],
- ['/reports/demo','Prepare a health report','Create a handoff from your existing account records.',Activity],
- ['/search','Search your records','Find reports, reminders and saved health information.',Search],
- ['/profile','Your profile','Manage account details and language preferences.',User],
- ['/diet','Food and wellbeing','Open your existing nutrition and wellbeing tools.',ShieldCheck],
-];
-export default async function Workspace(){const jar=await cookies();const user=await getUserBySessionToken(jar.get(SESSION_COOKIE)?.value);if(!user)redirect('/login?next=/workspace');return <AppShell title={`Welcome back${user.name?', '+user.name.split(' ')[0]:''}`} eyebrow="YOUR PERSONAL KAMAL WORKSPACE" description="Your existing account, records and care tools—together in one place."><section className="account-context-notice"><ShieldCheck size={22}/><div><strong>Your signed-in health space</strong><p>These tools use your existing KAMAL account and configured services. The synthetic exhibition demo is separate and never writes to your patient record.</p></div><Link href="/demo">Explore demo <ArrowRight size={17}/></Link></section><div className="account-tool-grid">{tools.map(([href,title,description,Icon])=><Link href={href} key={href} className="account-tool-card"><Icon size={26}/><h2>{title}</h2><p>{description}</p><span>Open tool <ArrowRight size={17}/></span></Link>)}</div></AppShell>;}
+import {UserAvatar} from '@/components/UserAvatar';
+import {SESSION_COOKIE,getUserBySessionToken,getLatestPatientIntake,listDiagnosisSessions,listHealthObservations} from '@/lib/auth/sqliteStore';
+import {observationInsights} from '@/lib/observations';
+export default async function Workspace(){
+ const jar=await cookies();const user=await getUserBySessionToken(jar.get(SESSION_COOKIE)?.value);if(!user)redirect('/login?next=/workspace');
+ const [intake,history,readings]=await Promise.all([getLatestPatientIntake(user.id),listDiagnosisSessions(user.id),listHealthObservations(user.id)]);
+ const insights=observationInsights(readings);
+ const tools=[['/session','A conversation that remembers','Start with what matters today. Patient information is optional.',MessageCircle],['/image-upload','Make sense of a report','Read a PDF or report image, then check its extracted values.',FileText],['/connected-health','Connect the dots','Add measurements, import readings and see personal trends.',Activity],['/reminders','Make room for follow-up','Keep your medications and care reminders in view.',Bell]];
+ return <AppShell title={`Good to see you, ${user.name.split(' ')[0]}.`} eyebrow="YOUR PERSONAL HEALTH COMPANION" description="Your records, conversations and next steps. One continuous story."><div className="care-stack"><section className="care-hero"><div className="flex items-center gap-4"><UserAvatar name={user.name}/><span className="care-kicker">BUILT AROUND YOU</span></div><h2>A little more connected.<br/>A lot more understood.</h2><p>{intake?'Your saved context is ready when you are. Pick up your last conversation, or start with something new.':'Start with a conversation or add your first report. No long forms to get through.'}</p><Link className="care-button" href="/session">Talk to KAMAL <ArrowUpRight size={18}/></Link></section><section className="care-stats" aria-label="Your account activity"><div><strong>{history.length}</strong><span>Saved conversations</span></div><div><strong>{readings.length}</strong><span>Recorded measurements</span></div><div><strong>{insights.length}</strong><span>Personal trend insights</span></div></section><section className="care-card"><span className="care-kicker">KAMAL INSIGHTS</span><h2>{insights.length?'A pattern worth a closer look':'Your next useful step'}</h2>{insights.length?<><p>{insights[0].detail}</p><p className="mt-2">{insights[0].action}</p></>:<p>{readings.length?'Keep adding dated readings from the same source. Sustained comparisons need at least ten recorded days.':'Add your first measurement to start building a personal baseline. Insights use your own records, never the exhibition profile.'}</p>}<Link href="/connected-health" className="care-text-link">Explore Connected Health →</Link></section><div className="care-grid">{tools.map(([href,title,description,Icon])=><Link href={href} className="care-card care-tool" key={href}><Icon size={26}/><h2>{title}</h2><p>{description}</p><ArrowUpRight size={22}/></Link>)}</div><section className="care-note"><ShieldCheck size={22}/><p>Live account tools and the fictional showcase are separate. <Link href="/demo" className="underline">Explore the labelled demo</Link> for the broader product vision.</p></section></div></AppShell>;
+}

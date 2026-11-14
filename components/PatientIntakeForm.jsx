@@ -19,7 +19,7 @@ function NumberField({ label, name, value, min, max, unit, placeholder, onChange
         <span className="text-xs font-semibold text-text-secondary">{unit}</span>
       </span>
       <span className="flex min-h-12 overflow-hidden rounded-lg border border-border bg-transparent focus-within:border-primary">
-        <input className="kamal-number-input min-w-0 flex-1 bg-[#edf8ef] px-4 py-3 text-text-primary placeholder:text-text-secondary focus:outline-none" inputMode="numeric" max={max} min={min} name={name} onChange={onChange} placeholder={placeholder} required type="number" value={value}/>
+        <input className="kamal-number-input min-w-0 flex-1 bg-[#edf8ef] px-4 py-3 text-text-primary placeholder:text-text-secondary focus:outline-none" inputMode="numeric" max={max} min={min} name={name} onChange={onChange} placeholder={placeholder} type="number" value={value}/>
         <button aria-label={`Decrease ${label.toLowerCase()}`} className="touch-target grid w-12 place-items-center border-l border-border bg-[#DAF8EF] text-[#10231f] hover:bg-white" onClick={() => onStep(name, -1, min, max)} type="button">
           <Minus aria-hidden="true" className="h-4 w-4"/>
         </button>
@@ -51,19 +51,20 @@ export function PatientIntakeForm({
     startBlank = false,
     hideSubmitText = false,
     startDiagnosisOnSubmit = false,
-    title = "Patient information",
-    description = "Save these details first so KAMAL can ask safer, more relevant follow-up questions.",
+    title = "A little context, only if you want",
+    description = "You can leave every field blank and start chatting. Saved details are prefilled; check anything that has changed.",
     submitLabel = existingIntake ? "Update patient information" : "Save patient information",
     successMessage = "Patient information saved."
 }) {
     const router = useRouter();
     const [form, setForm] = useState({
-        age: startBlank ? "" : existingIntake?.age ?? 30,
+        age: startBlank ? "" : existingIntake?.age ?? "",
         gender: startBlank ? "" : existingIntake?.gender ?? "",
-        heightCm: startBlank ? "" : existingIntake?.heightCm ?? 170,
-        weightKg: startBlank ? "" : existingIntake?.weightKg ?? 70,
+        heightCm: startBlank ? "" : existingIntake?.heightCm ?? "",
+        weightKg: startBlank ? "" : existingIntake?.weightKg ?? "",
         allergies: startBlank ? "" : existingIntake?.allergies ?? "",
-        mainConcern: startBlank ? "" : existingIntake?.mainConcern ?? ""
+        mainConcern: startDiagnosisOnSubmit ? "" : existingIntake?.mainConcern ?? "",
+        useHistory: existingIntake?.useHistory ?? false
     });
     const [status, setStatus] = useState({ type: "idle", message: "" });
     const isSaving = status.type === "saving";
@@ -83,6 +84,7 @@ export function PatientIntakeForm({
     async function submitForm(event) {
         event.preventDefault();
         setStatus({ type: "saving", message: startDiagnosisOnSubmit ? "Starting diagnosis..." : "Saving patient information..." });
+        try {
         const response = await fetch("/api/patient-intake", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -106,6 +108,7 @@ export function PatientIntakeForm({
         }
         setStatus({ type: "success", message: successMessage });
         router.refresh();
+        } catch { setStatus({type:"error",message:"Connection interrupted. Your entries are still here; please try again."}); }
     }
 
     return (<section className="rounded-lg border border-border bg-surface p-5 shadow-soft">
@@ -126,12 +129,12 @@ export function PatientIntakeForm({
       </div>
 
       <form className="mt-5 grid gap-5" onSubmit={submitForm}>
-        <div className="grid gap-5 md:grid-cols-2">
+        <details><summary className="cursor-pointer text-lg font-bold">Optional patient information {existingIntake ? "· saved details loaded" : ""}</summary><div className="mt-5 grid gap-5 md:grid-cols-2">
           <NumberField label="Age" max={130} min={0} name="age" onChange={updateField} onStep={stepField} placeholder="e.g. 39" unit="years" value={form.age}/>
           <label className="block">
             <span className="mb-2 block text-sm font-bold text-text-primary">Gender</span>
             <span className="relative block">
-              <select className="min-h-12 w-full appearance-none rounded-lg border border-border bg-[#edf8ef] px-4 py-3 pr-12 text-text-primary focus:border-primary focus:outline-none" name="gender" onChange={updateField} required value={form.gender}>
+              <select className="min-h-12 w-full appearance-none rounded-lg border border-border bg-[#edf8ef] px-4 py-3 pr-12 text-text-primary focus:border-primary focus:outline-none" name="gender" onChange={updateField} value={form.gender}>
                 {genderOptions.map((option) => (<option key={option.value} value={option.value}>
                     {option.label}
                   </option>))}
@@ -142,9 +145,10 @@ export function PatientIntakeForm({
           <NumberField label="Height" max={260} min={40} name="heightCm" onChange={updateField} onStep={stepField} placeholder="e.g. 168" unit="cm" value={form.heightCm}/>
           <NumberField label="Weight" max={500} min={1} name="weightKg" onChange={updateField} onStep={stepField} placeholder="e.g. 70" unit="kg" value={form.weightKg}/>
         </div>
-        <TextInput label="Allergies" name="allergies" onChange={updateField} placeholder="e.g. Penicillin, peanuts, none" value={form.allergies}/>
-        <TextArea label="Your concern" name="mainConcern" onChange={updateField} placeholder="Describe the main symptom, concern, or reason for today's diagnosis session." required value={form.mainConcern}/>
+        <TextInput label="Allergies (optional)" name="allergies" onChange={updateField} placeholder="Leave blank if unknown" value={form.allergies}/></details>
+        <TextArea label="Your concern (optional)" name="mainConcern" onChange={updateField} placeholder="Add a little context, or tell KAMAL in the conversation." value={form.mainConcern}/>
 
+        <label className="flex items-start gap-3 rounded-xl bg-slate-50 p-4"><input type="checkbox" className="mt-1 h-5 w-5" checked={form.useHistory} onChange={e=>setForm({...form,useHistory:e.target.checked})}/><span>Use my previous completed conversations for relevant context.<small className="block mt-1">KAMAL uses up to three recent summaries. Old AI suggestions are not confirmed medical facts. Draft messages are saved to your account so you can return later.</small></span></label>
         {status.message ? (<p className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ${status.type === "error" ? "bg-red-50 text-emergency" : "bg-teal-50 text-primary"}`}>
             {status.type === "error" ? (<AlertCircle aria-hidden="true" className="h-4 w-4 shrink-0"/>) : null}
             <span>{status.message}</span>
