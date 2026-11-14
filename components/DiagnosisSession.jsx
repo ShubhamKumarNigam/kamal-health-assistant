@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { readReportText } from "@/lib/reportText";
 import { UserAvatar } from "@/components/UserAvatar";
-import { languages } from "@/lib/languages";
-import { useMemo, useRef, useState } from "react";
+import {SourceList} from "@/components/SourceList";
+import { AccountLanguageSelect } from "@/components/AccountLanguageSelect";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ClipboardCheck, ImagePlus, Loader2, Mic, Send, ShieldAlert, Square, Stethoscope, UserRound, X } from "lucide-react";
 
 function messageLabel(role) {
@@ -116,8 +117,11 @@ export function DiagnosisSession({ user, intake, draft }) {
         content: intake.mainConcern
     }), [intake.mainConcern]);
     const [messages, setMessages] = useState(draft?.messages?.length ? draft.messages : intake.mainConcern ? [preConsultationMessage] : [{role:"assistant",content:"What would you like to talk about today? You can start without filling in any patient details."}]);
+    const [vaultOptions,setVaultOptions]=useState([]);
+    const [documentIds,setDocumentIds]=useState([]);
+    useEffect(()=>{fetch('/api/vault').then(r=>r.json()).then(d=>{if(d.ok)setVaultOptions(d.documents.filter(x=>x.status==='ready'));}).catch(()=>{});},[]);
     const [reply, setReply] = useState("");
-    const [replyLanguage, setReplyLanguage] = useState("en");
+    const [replyLanguage, setReplyLanguage] = useState(user.preferredLanguage || "en");
     const [attachment, setAttachment] = useState(null);
     const [status, setStatus] = useState(draft?.result ? "complete" : "ready");
     const [voiceStatus, setVoiceStatus] = useState("idle");
@@ -151,6 +155,7 @@ export function DiagnosisSession({ user, intake, draft }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 languageCode: replyLanguage,
+                documentIds,
                 messages: nextMessages.map((message) => ({
                     role: message.role,
                     content: message.modelContent || message.content
@@ -163,7 +168,8 @@ export function DiagnosisSession({ user, intake, draft }) {
         }
         const assistantMessage = {
             role: "assistant",
-            content: result.message.content
+            content: result.message.content,
+            sources: result.message.sources || []
         };
         setMessages([...nextMessages, assistantMessage]);
         if (result.status === "complete") {
@@ -345,12 +351,7 @@ export function DiagnosisSession({ user, intake, draft }) {
     }
 
     return (<div data-no-translate translate="no" className="care-conversation overflow-hidden rounded-3xl border border-[#ADF8EF]/20 bg-[#324C4A] shadow-[0_28px_80px_rgba(0,0,0,0.18)]">
-        <label className="block p-5 text-white font-semibold">Reply language
-          <select className="ml-3 rounded-lg bg-white p-3 text-[#18313e]" value={replyLanguage} disabled={isLoading || isComplete} onChange={event=>setReplyLanguage(event.target.value)}>
-            {languages.map(language=><option key={language.code} value={language.code}>{language.name}</option>)}
-          </select>
-          <small className="block mt-2 font-normal">English by default. Changing this affects new replies, not saved messages.</small>
-        </label>
+        <div className="p-5 text-white"><AccountLanguageSelect initialLanguage={user.preferredLanguage} onChange={setReplyLanguage}/></div>
       <section className="flex min-h-[680px] flex-col bg-[#324C4A] p-5 md:p-8">
         <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#ADF8EF]/18 bg-white/10 p-5 md:flex-row md:items-start md:justify-between">
           <div>
@@ -368,6 +369,7 @@ export function DiagnosisSession({ user, intake, draft }) {
           </span>
         </div>
 
+        <details className="mb-5 rounded-lg bg-white/10 p-4 text-white"><summary>Use documents from My Health Vault (optional)</summary><p className="my-2 text-sm">Select up to three records to send relevant excerpts, saved notes and analyses to the AI provider with your next message.</p>{vaultOptions.map(d=><label className="block my-2" key={d.id}><input type="checkbox" checked={documentIds.includes(d.id)} disabled={isLoading || (!documentIds.includes(d.id)&&documentIds.length>=3)} onChange={e=>setDocumentIds(e.target.checked?[...documentIds,d.id]:documentIds.filter(id=>id!==d.id))}/> {d.metadata.title||d.name}</label>)}{!vaultOptions.length&&<a href="/vault" className="underline">Add documents to your vault</a>}</details>
         <div className="flex-1 space-y-5">
           {messages.map((message, index) => (<article className={`max-w-3xl rounded-2xl p-5 shadow-[0_16px_36px_rgba(0,0,0,0.14)] ${message.role === "assistant"
               ? "mr-auto border-l-4 border-l-[#19C37D] bg-[#DAF8EF] text-[#324C4A]"
@@ -377,6 +379,7 @@ export function DiagnosisSession({ user, intake, draft }) {
                 <UserAvatar name={message.role === "assistant" ? "KAMAL" : user.name} assistant={message.role === "assistant"}/>
               </div>
               <p className="whitespace-pre-wrap font-medium leading-7">{message.content}</p>
+              {message.role==="assistant"&&<SourceList sources={message.sources}/> }
               {message.attachmentUrl ? (<div className="mt-4 overflow-hidden rounded-xl border border-[#324C4A]/15 bg-white/60">
                   {message.attachmentType !== "application/pdf" ? <img alt={message.attachmentName || "Attached image"} className="max-h-64 w-full object-contain" src={message.attachmentUrl}/> : <p className="p-4">PDF report attached</p>}
                   <p className="border-t border-[#324C4A]/10 px-3 py-2 text-xs font-bold opacity-70">

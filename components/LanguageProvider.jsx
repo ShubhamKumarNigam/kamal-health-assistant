@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import {usePathname} from "next/navigation";
 import { languages } from "@/lib/languages";
 
 const STORAGE_KEY = "kamal-language";
@@ -90,6 +91,7 @@ async function requestTranslations(language, texts) {
 }
 
 export function LanguageProvider({ children }) {
+    const pathname=usePathname();
     const [languageCode, setLanguageCode] = useState("en");
     const [isHydrated, setIsHydrated] = useState(false);
     const cacheRef = useRef(new Map());
@@ -101,12 +103,12 @@ export function LanguageProvider({ children }) {
     }, [languageCode]);
 
     useEffect(() => {
-        const savedLanguage = localStorage.getItem(STORAGE_KEY);
-        if (languages.some((language) => language.code === savedLanguage)) {
-            setLanguageCode(savedLanguage);
-        }
-        setIsHydrated(true);
-    }, []);
+        let active = true;
+        fetch('/api/preferences', {cache:'no-store'}).then(response=>response.json()).then(data=>{
+            if(active) setLanguageCode(languages.some(l=>l.code===data.languageCode) ? data.languageCode : 'en');
+        }).catch(()=>{}).finally(()=>{if(active)setIsHydrated(true);});
+        return ()=>{active=false;};
+    }, [pathname]);
 
     useEffect(() => {
         if (!isHydrated) {
