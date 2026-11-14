@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { readReportText } from "@/lib/reportText";
 import { UserAvatar } from "@/components/UserAvatar";
+import {SavedContextSetting} from '@/components/SavedContextSetting';
 import {SourceList} from "@/components/SourceList";
 import { AccountLanguageSelect } from "@/components/AccountLanguageSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -119,6 +120,7 @@ export function DiagnosisSession({ user, intake, draft }) {
     const [messages, setMessages] = useState(draft?.messages?.length ? draft.messages : intake.mainConcern ? [preConsultationMessage] : [{role:"assistant",content:"What would you like to talk about today? You can start without filling in any patient details."}]);
     const [vaultOptions,setVaultOptions]=useState([]);
     const [documentIds,setDocumentIds]=useState([]);
+    const [useSavedContext,setUseSavedContext]=useState(user.useSavedContext||false);
     useEffect(()=>{fetch('/api/vault').then(r=>r.json()).then(d=>{if(d.ok)setVaultOptions(d.documents.filter(x=>x.status==='ready'));}).catch(()=>{});},[]);
     const [reply, setReply] = useState("");
     const [replyLanguage, setReplyLanguage] = useState(user.preferredLanguage || "en");
@@ -369,7 +371,7 @@ export function DiagnosisSession({ user, intake, draft }) {
           </span>
         </div>
 
-        <details className="mb-5 rounded-lg bg-white/10 p-4 text-white"><summary>Use documents from My Health Vault (optional)</summary><p className="my-2 text-sm">Select up to three records to send relevant excerpts, saved notes and analyses to the AI provider with your next message.</p>{vaultOptions.map(d=><label className="block my-2" key={d.id}><input type="checkbox" checked={documentIds.includes(d.id)} disabled={isLoading || (!documentIds.includes(d.id)&&documentIds.length>=3)} onChange={e=>setDocumentIds(e.target.checked?[...documentIds,d.id]:documentIds.filter(id=>id!==d.id))}/> {d.metadata.title||d.name}</label>)}{!vaultOptions.length&&<a href="/vault" className="underline">Add documents to your vault</a>}</details>
+        <SavedContextSetting onChange={setUseSavedContext}/><details className="mb-5 rounded-lg bg-white/10 p-4 text-white"><summary>Use documents from My Health Vault (optional)</summary><p className="my-2 text-sm">Select up to three records to send relevant excerpts, saved notes and analyses to the AI provider with your next message.</p>{vaultOptions.map(d=><label className="block my-2" key={d.id}><input type="checkbox" checked={documentIds.includes(d.id)} disabled={isLoading || (!documentIds.includes(d.id)&&documentIds.length>=3)} onChange={e=>setDocumentIds(e.target.checked?[...documentIds,d.id]:documentIds.filter(id=>id!==d.id))}/> {d.metadata.title||d.name}</label>)}{!vaultOptions.length&&<a href="/vault" className="underline">Add documents to your vault</a>}</details>
         <div className="flex-1 space-y-5">
           {messages.map((message, index) => (<article className={`max-w-3xl rounded-2xl p-5 shadow-[0_16px_36px_rgba(0,0,0,0.14)] ${message.role === "assistant"
               ? "mr-auto border-l-4 border-l-[#19C37D] bg-[#DAF8EF] text-[#324C4A]"
@@ -406,7 +408,7 @@ export function DiagnosisSession({ user, intake, draft }) {
         </p>
 
         {error && messages.at(-1)?.role === "user" && <button type="button" className="mt-3 min-h-12 rounded-xl bg-white px-5 text-[#183c3a]" disabled={isLoading} onClick={()=>askDoctor(messages).catch(e=>{setStatus("ready");setError(e.message);})}>Retry saved message</button>}
-        <p className="mt-4 text-sm text-white">{intake.useHistory ? "Previous completed conversations: enabled (up to three recent summaries)." : "Previous completed conversations: not used in this conversation."} <Link className="underline" href="/session">Start fresh or change context</Link></p>
+        <p className="mt-4 text-sm text-white">{useSavedContext ? "Automatic saved context: enabled (relevant vault records and completed conversations)." : intake.useHistory ? "Previous completed conversations: enabled (up to three recent summaries)." : "Previous completed conversations: not used in this conversation."} <Link className="underline" href="/session">Start fresh or change context</Link></p>
         {!hasStarted ? (<button className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#ADF8EF] px-5 py-3 font-extrabold text-[#10231f] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70" disabled={isLoading} onClick={startDiagnosis} type="button">
             {isLoading ? (<Loader2 aria-hidden="true" className="h-5 w-5 animate-spin"/>) : (<Stethoscope aria-hidden="true" className="h-5 w-5"/>)}
             Talk to KAMAL
