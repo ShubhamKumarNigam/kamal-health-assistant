@@ -3,7 +3,7 @@ import {accountApi} from '@/lib/accountApi';
 import {connectDrive,disconnectDrive,driveStatus,syncDrive} from '@/lib/driveSync';
 export const runtime='nodejs';
 export const maxDuration=60;
-export function GET(request){return accountApi(request,async user=>NextResponse.json({ok:true,...await driveStatus(user.id)},{headers:{'Cache-Control':'private, no-store'}}));}
+export function GET(request){return accountApi(request,async user=>NextResponse.json({ok:true,available:user.email!==(process.env.KAMAL_DEMO_EMAIL||'patient@example.com'),...await driveStatus(user.id)},{headers:{'Cache-Control':'private, no-store'}}));}
 export function POST(request){return accountApi(request,async user=>{
  if(user.email===(process.env.KAMAL_DEMO_EMAIL||'patient@example.com'))return NextResponse.json({ok:false,message:'Sign in to your own KAMAL account to connect private Google Drive storage.'},{status:403});
  const body=await request.json(),origin=new URL(request.url).origin;
