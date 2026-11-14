@@ -432,6 +432,8 @@ function Landing({ onEnter }: { onEnter: () => void }) {
       <footer className="public-footer">
         <Logo />
         <span>Health information. Human understanding.</span>
+        <a href="/privacy">Privacy policy</a>
+        <a href="/terms">Terms of use</a>
         <small>Synthetic demonstration · No real patient data</small>
       </footer>
     </div>

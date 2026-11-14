@@ -1,0 +1,68 @@
+# KAMAL public policies — owner review draft
+
+Not published. Please confirm the operator/contact, data retention description, provider list and commitments before publication.
+
+# Privacy policy
+
+Last updated: 14 November 2026
+
+## Who operates KAMAL
+
+KAMAL Health is operated by Shubham Kumar Nigam. For privacy questions, access, correction or deletion requests, contact shubhamkumarnigam@gmail.com. Do not include medical reports or passwords in an initial support email.
+
+## Google sign-in and your account
+
+When you choose Google sign-in, KAMAL receives your Google account identifier, name, email address, email-verification status and profile picture URL. We use this information to create and identify your account and keep your records associated with it. KAMAL requests only basic identity scopes, not access to your Gmail messages, Drive files, contacts or calendar. A mobile number is optional; Google signup does not require SMS verification.
+
+## Information you choose to provide
+
+KAMAL processes profile details, health history, symptoms, measurements, reminders, conversations and reports you submit to provide the features you request. Saved account records and completed session history are stored in our database. The report analyser extracts text from PDFs and report images in your browser, then sends that text and your question to the server for AI processing. Voice features may send audio to a transcription provider or use your browser’s speech service. Only submit information you are entitled to share.
+
+## Service providers and sharing
+
+Vercel hosts the application and Neon provides database storage. Google handles Google sign-in. Groq processes report-analysis requests and supported transcription requests; other AI features may use OpenCode and its model providers. Requests can contain the health information and conversation context needed for the selected feature. Resend handles configured email delivery, including reports you ask to email. Twilio processes your number and verification messages only if you choose SMS verification. Providers may process information outside your country under their own applicable terms and retention practices.
+
+## Cookies and storage
+
+KAMAL uses session cookies to keep you signed in and temporary cookies for authentication flows. Language and appearance preferences may be saved in browser storage. Account and saved health records remain stored until removed; automatic expiry does not apply to all records. Temporary verification challenges expire. Provider logs and backups may have separate retention periods.
+
+## Your choices
+
+You can use Google sign-in without linking a mobile number, update available profile fields, sign out, and stop using optional AI or messaging features. You can revoke Google access in your Google Account settings; this does not itself delete records already saved in KAMAL. Contact the operator for account or record access, correction and deletion requests. Identity verification may be needed to protect your information.
+
+## Use of Google user data
+
+Google identity data is used for account authentication and account functionality, not advertising or sale. KAMAL’s use and transfer of information received from Google APIs will adhere to the Google API Services User Data Policy, including its Limited Use requirements.
+
+## Security and updates
+
+KAMAL uses HTTPS and account authentication. No online service can guarantee absolute security. Avoid submitting unnecessary identifiers or sensitive information. This notice may be updated when the service or its data practices change; the date above identifies the current version.
+
+# Terms of use
+
+Last updated: 14 November 2026
+
+## About the service
+
+KAMAL Health is operated by Shubham Kumar Nigam and offers tools for organising health information and generating AI-assisted explanations. Contact: shubhamkumarnigam@gmail.com. These terms apply when you use KAMAL.
+
+## Free accounts and optional mobile login
+
+Creating and using a Google-based KAMAL account currently requires no payment to KAMAL and no mobile verification. AI features are subject to availability, shared provider quotas and rate limits; free access is not a promise of unlimited use. SMS sign-in is optional and currently restricted to eligible verified Indian numbers under a limited Twilio trial. KAMAL will not enrol you in a paid plan without your agreement.
+
+## Health information and AI limits
+
+KAMAL is not a clinician, emergency service or substitute for professional medical care. AI and text recognition can produce incorrect, incomplete or misleading results. Verify report values against the original and discuss health decisions with a qualified clinician. Do not delay urgent care because of KAMAL output. In an emergency, contact local emergency services.
+
+## Your account and submissions
+
+Use an account you control, protect your sign-in methods, and submit information you have permission to use. Do not impersonate others, upload another person’s private information without authority, abuse verification messages, attempt unauthorised access, or disrupt the service. You retain rights in your submitted content and permit its processing as described in the Privacy Policy to provide the features you request.
+
+## Availability and third parties
+
+Features may change or become unavailable, including when trial allowances or AI quotas run out. KAMAL relies on third-party authentication, hosting, database, AI and messaging services. Keep copies of important original records; KAMAL should not be your sole medical record store.
+
+## Stopping use and contacting us
+
+You can stop using KAMAL at any time. For account or data deletion requests, contact the operator as described in the Privacy Policy. Access may be restricted for misuse or to protect the service and its users. Material changes to these terms will be reflected on this page. Nothing here removes rights you have under applicable law.
+

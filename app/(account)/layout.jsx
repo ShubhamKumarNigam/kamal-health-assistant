@@ -8,6 +8,9 @@ export default function RootLayout({ children }) {
     return (<html lang="en">
       <body className="font-sans antialiased">
         <LanguageProvider>{children}</LanguageProvider>
+        <footer className="flex flex-wrap justify-center gap-6 px-6 py-6 text-base underline">
+          <a href="/privacy">Privacy policy</a><a href="/terms">Terms of use</a>
+        </footer>
       </body>
     </html>);
 }
