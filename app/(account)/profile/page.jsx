@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { ClinicalCard } from "@/components/ClinicalCard";
 import { ProfileContactForm } from "@/components/ProfileContactForm";
-import { ProfileLanguageButtons } from "@/components/ProfileLanguageButtons";
+import { AccountLanguageSelect } from "@/components/AccountLanguageSelect";
 import { ProfileLogoutButton } from "@/components/ProfileLogoutButton";
 import { SESSION_COOKIE, getUserBySessionToken } from "@/lib/auth/sqliteStore";
 export default async function ProfilePage() {
@@ -64,7 +64,7 @@ export default async function ProfilePage() {
         <div className="lg:col-span-2"><LocationPreference /></div>
         <div className="lg:col-span-2">
           <ClinicalCard title="Language">
-            <ProfileLanguageButtons />
+            <AccountLanguageSelect initialLanguage={user.preferredLanguage} />
           </ClinicalCard>
         </div>
       </div>
