@@ -35,3 +35,5 @@ Validation covers encryption/account binding/tampering, exact timestamp preserva
 No new paid service, billing account or upgrade is required or activated.
 
 References: https://developers.google.com/identity/oauth2/web/guides/use-code-model and https://developers.google.com/workspace/drive/api/guides/api-specific-auth .
+
+Drive navigation: the vault shows the managed root folder and up to 200 current-account synced record links (original, summary/notes and logical folder). Record pages filter to their own document. IDs are validated before generating Google Drive URLs. The status endpoint joins by authenticated account and connection generation; no Drive token is returned. Older synced records automatically refresh once to populate navigation IDs. The UI explicitly labels sync ON and disables connection from the shared demo.

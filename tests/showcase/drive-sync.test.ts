@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import {sealDriveToken,openDriveToken} from '../../lib/driveCrypto';
-import {syncDrive,driveSummary} from '../../lib/driveSync';
+import {syncDrive,driveSummary,driveLink} from '../../lib/driveSync';
 process.env.GOOGLE_CLIENT_SECRET='synthetic-test-secret-not-a-real-credential';
 process.env.GOOGLE_CLIENT_ID='synthetic-client';
 
@@ -49,6 +49,7 @@ test('sync preserves exact version, updates managed files, moves folders and inc
  assert.ok(uploads[1].options.body.toString().includes('Additional test note'));
  assert.ok(uploads[1].options.body.toString().includes('Unverified test analysis'));
  assert.equal(f.writes.find(w=>w.sql.startsWith('INSERT INTO drive_sync_records')).params[2],f.version);
+ assert.deepEqual(f.writes.find(w=>w.sql.startsWith('INSERT INTO drive_sync_records')).params.slice(3),['existing-file','folder','existing-file']);
  assert.ok(f.dbCalls.find(c=>c.sql.startsWith('SELECT d.*')).sql.includes("d.user_id=$1"));
 });
 test('partial failure leaves the record pending for a retry',async()=>{
@@ -71,4 +72,10 @@ test('disconnect stops further Drive requests and corrupt originals cannot uploa
  const corrupt=fixture({corrupt:true});await syncDrive('alice','https://kamal.example',corrupt);
  assert.ok(!corrupt.calls.some(c=>c.url.includes('upload/')));
  assert.ok(!corrupt.writes.some(w=>w.sql.startsWith('INSERT INTO drive_sync_records')));
+});
+
+test('Drive navigation links only accept Google file identifiers',()=>{
+ assert.equal(driveLink('abc-123_'),'https://drive.google.com/file/d/abc-123_/view');
+ assert.equal(driveLink('folder_123',true),'https://drive.google.com/drive/folders/folder_123');
+ assert.equal(driveLink(null),null);assert.equal(driveLink('https://evil.example'),null);
 });
