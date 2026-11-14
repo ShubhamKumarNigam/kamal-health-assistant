@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { readReportText } from "@/lib/reportText";
 import { UserAvatar } from "@/components/UserAvatar";
+import { languages } from "@/lib/languages";
 import { useMemo, useRef, useState } from "react";
 import { AlertTriangle, ClipboardCheck, ImagePlus, Loader2, Mic, Send, ShieldAlert, Square, Stethoscope, UserRound, X } from "lucide-react";
 
@@ -116,6 +117,7 @@ export function DiagnosisSession({ user, intake, draft }) {
     }), [intake.mainConcern]);
     const [messages, setMessages] = useState(draft?.messages?.length ? draft.messages : intake.mainConcern ? [preConsultationMessage] : [{role:"assistant",content:"What would you like to talk about today? You can start without filling in any patient details."}]);
     const [reply, setReply] = useState("");
+    const [replyLanguage, setReplyLanguage] = useState("en");
     const [attachment, setAttachment] = useState(null);
     const [status, setStatus] = useState(draft?.result ? "complete" : "ready");
     const [voiceStatus, setVoiceStatus] = useState("idle");
@@ -148,6 +150,7 @@ export function DiagnosisSession({ user, intake, draft }) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+                languageCode: replyLanguage,
                 messages: nextMessages.map((message) => ({
                     role: message.role,
                     content: message.modelContent || message.content
@@ -341,7 +344,13 @@ export function DiagnosisSession({ user, intake, draft }) {
         requestAnimationFrame(() => inputRef.current?.focus());
     }
 
-    return (<div className="care-conversation overflow-hidden rounded-3xl border border-[#ADF8EF]/20 bg-[#324C4A] shadow-[0_28px_80px_rgba(0,0,0,0.18)]">
+    return (<div data-no-translate translate="no" className="care-conversation overflow-hidden rounded-3xl border border-[#ADF8EF]/20 bg-[#324C4A] shadow-[0_28px_80px_rgba(0,0,0,0.18)]">
+        <label className="block p-5 text-white font-semibold">Reply language
+          <select className="ml-3 rounded-lg bg-white p-3 text-[#18313e]" value={replyLanguage} disabled={isLoading || isComplete} onChange={event=>setReplyLanguage(event.target.value)}>
+            {languages.map(language=><option key={language.code} value={language.code}>{language.name}</option>)}
+          </select>
+          <small className="block mt-2 font-normal">English by default. Changing this affects new replies, not saved messages.</small>
+        </label>
       <section className="flex min-h-[680px] flex-col bg-[#324C4A] p-5 md:p-8">
         <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#ADF8EF]/18 bg-white/10 p-5 md:flex-row md:items-start md:justify-between">
           <div>
